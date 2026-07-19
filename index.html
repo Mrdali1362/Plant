@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="theme-color" content="#2E4429" />
+<title>Botanical Log</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root{
+    --bg:#E7EADD; --card:#F6F3E7; --ink:#22331F; --ink-soft:#5B6B54;
+    --moss:#3F5C39; --moss-dark:#2E4429; --gold:#C79A3E; --water:#3E7C93;
+    --overdue:#B8503D; --line:#D9D3BC;
+  }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; }
+  .font-display{ font-family:'Fraunces',serif; }
+  .font-mono{ font-family:'IBM Plex Mono',monospace; }
+  .wrap{ max-width:900px; margin:0 auto; padding:0 20px; }
+  a{ color:inherit; }
+
+  header{ background:var(--moss-dark); padding:26px 0 18px; }
+  .header-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; }
+  .eyebrow{ color:#B9CBAF; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; margin:0; }
+  h1{ color:#F6F3E7; font-size:30px; margin:4px 0 0; font-weight:600; }
+  .stamp{ background:var(--card); border-radius:999px; padding:9px 16px; display:inline-flex; align-items:center; gap:10px; border:1px solid var(--line); font-size:14px; }
+  .icon-btn{ background:none; border:none; cursor:pointer; color:var(--moss); font-size:15px; padding:2px; }
+  .city-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:14px; }
+  .city-row input{ background:transparent; border:none; border-bottom:1px solid #5A7452; color:#F6F3E7; font-size:14px; padding:4px 2px; outline:none; width:150px; font-family:'Inter',sans-serif; }
+  .city-row input::placeholder{ color:#9DB393; }
+  .link-btn{ background:none; border:none; cursor:pointer; color:#B9CBAF; font-size:12px; text-decoration:underline; font-family:'IBM Plex Mono',monospace; padding:0; }
+  #weatherError{ color:#E3B7A9; font-size:12px; }
+
+  main{ padding:28px 0 8px; }
+
+  .dashed-btn{ width:100%; border:1.5px dashed var(--moss); border-radius:14px; padding:20px; background:rgba(63,92,57,0.05); color:var(--moss); cursor:pointer; font-size:17px; display:flex; align-items:center; justify-content:center; gap:10px; }
+
+  .card{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; }
+  .row{ display:flex; }
+
+  .field-label{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); display:block; margin-bottom:4px; }
+  input, select, textarea{ font-family:'Inter',sans-serif; border:1px solid var(--line); border-radius:8px; padding:8px 10px; background:#fff; font-size:14px; color:var(--ink); }
+
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:18px; margin-top:26px; }
+  .thumb{ width:56px; height:56px; object-fit:cover; border-radius:8px; flex-shrink:0; }
+  .thumb-placeholder{ display:flex; align-items:center; justify-content:center; background:var(--bg); font-size:22px; }
+  .care-tip{ font-size:12.5px; color:var(--ink-soft); border-top:1px dashed var(--line); padding-top:8px; margin:6px 0 0; }
+
+  .btn-primary{ background:var(--water); color:var(--card); padding:7px 12px; border-radius:7px; font-size:12.5px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:5px; }
+  .btn-ghost{ background:none; border:none; color:var(--moss); font-size:12.5px; cursor:pointer; padding:7px 4px; display:inline-flex; align-items:center; gap:5px; text-decoration:none; }
+
+  .gauge{ position:relative; width:72px; height:72px; flex-shrink:0; }
+  .gauge-center{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:18px; }
+
+  .confirm-row{ display:flex; align-items:center; justify-content:space-between; background:#F3E3DE; border-radius:8px; padding:6px 10px; margin:8px 0; font-size:12px; color:var(--overdue); }
+
+  .spin{ display:inline-block; animation:spin 1s linear infinite; }
+  @keyframes spin{ from{ transform:rotate(0);} to{ transform:rotate(360deg);} }
+
+  details.settings{ margin-top:10px; }
+  details.settings summary{ cursor:pointer; font-size:13px; color:var(--ink-soft); }
+  .settings-panel{ margin-top:10px; padding:14px; background:var(--card); border:1px solid var(--line); border-radius:10px; display:flex; flex-direction:column; gap:8px; }
+  .settings-panel .hint{ font-size:11.5px; color:var(--ink-soft); margin:0; line-height:1.5; }
+
+  footer{ text-align:center; color:var(--ink-soft); font-size:12px; padding:28px 16px 40px; }
+  #emptyState{ color:var(--ink-soft); font-size:14px; margin-top:22px; display:none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="header-top">
+      <div>
+        <p class="eyebrow font-mono">Field Journal</p>
+        <h1 class="font-display">Botanical Log</h1>
+      </div>
+      <div class="stamp" id="weatherStamp"></div>
+    </div>
+    <div class="city-row">
+      <span style="color:#B9CBAF;font-size:13px;">📍</span>
+      <input id="cityInput" placeholder="Enter your city" onkeydown="if(event.key==='Enter') handleSetCity()" />
+      <button class="link-btn" onclick="handleSetCity()">set</button>
+      <button class="link-btn" onclick="useMyLocation()">use my location</button>
+      <span id="weatherError"></span>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="addSection"></div>
+
+  <details class="settings">
+    <summary>⚙ Settings — photo identification</summary>
+    <div class="settings-panel">
+      <label class="field-label">ANTHROPIC API KEY (OPTIONAL)</label>
+      <input id="apiKeyInput" type="password" placeholder="sk-ant-..." />
+      <div>
+        <button class="btn-ghost" style="padding:6px 0;" onclick="saveApiKey()">Save key</button>
+        <span id="apiKeySavedMsg" style="display:none;color:var(--water);font-size:12px;">saved ✓</span>
+      </div>
+      <p class="hint">Adding your own Anthropic API key lets this app identify plants from photos, calling Claude directly from your browser. The key is stored only on this device (browser local storage) — it is never sent anywhere except Anthropic's API. Don't hand this file to anyone with your key still filled in. Without a key, everything still works — you just enter plant details yourself instead of photo ID.</p>
+    </div>
+  </details>
+
+  <div id="plantGrid" class="grid"></div>
+  <p id="emptyState">No specimens logged yet. Add one above — with a saved API key, a photo is enough; otherwise fill in the details yourself.</p>
+</main>
+
+<footer>Estimates only, adjusted for current temperature and rain — always check the soil before watering.</footer>
+
+<input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhotoChosen(event)" />
+
+<script>
+  // ---------- state ----------
+  let plants = [];
+  let settings = {};
+  let weather = null;
+  let weatherLoading = false;
+  let weatherErrorMsg = "";
+  let adding = false;
+  let identifying = false;
+  let identifyError = "";
+  let draft = null;
+  let confirmDeleteId = null;
+
+  // ---------- storage ----------
+  function loadState(){
+    try{ plants = JSON.parse(localStorage.getItem('botlog_plants') || '[]'); }catch(e){ plants = []; }
+    try{ settings = JSON.parse(localStorage.getItem('botlog_settings') || '{}'); }catch(e){ settings = {}; }
+  }
+  function savePlants(){ localStorage.setItem('botlog_plants', JSON.stringify(plants)); }
+  function saveSettings(){ localStorage.setItem('botlog_settings', JSON.stringify(settings)); }
+
+  // ---------- helpers ----------
+  const todayISO = () => new Date().toISOString().slice(0,10);
+  const addDays = (date, n) => new Date(date.getTime() + n*86400000);
+  const icsDate = (d) => d.toISOString().slice(0,10).replace(/-/g,'');
+  const uid = () => (crypto.randomUUID && crypto.randomUUID()) || (Date.now()+'-'+Math.random().toString(16).slice(2));
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+  }
+
+  function resizeImageFile(file, maxWidth=500){
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const scale = Math.min(1, maxWidth/img.width);
+          const w = Math.max(1, Math.round(img.width*scale));
+          const h = Math.max(1, Math.round(img.height*scale));
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+          resolve({ dataUrl, base64: dataUrl.split(',')[1], mediaType: 'image/jpeg' });
+        };
+        img.onerror = () => reject(new Error('Could not read image'));
+        img.src = e.target.result;
+      };
+      reader.onerror = () => reject(new Error('Could not read file'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function identifyPlant(base64, mediaType, apiKey){
+    const prompt = `You are an expert botanist helping identify houseplants and garden plants from photos.
+Look at this image and identify the plant. Respond with ONLY a JSON object and nothing else — no markdown formatting, no code fences, no explanation before or after — in exactly this shape:
+{"commonName": string, "species": string, "location": "indoor" or "outdoor" or "either", "baseWateringDays": number, "sunlight": short string, "careTip": short string}
+"baseWateringDays" should be the typical number of days between waterings for this plant in mild, average conditions (around 20-22C, moderate humidity, no unusual weather). If you cannot identify the exact species, give your best general guess at the plant type or family and still provide a reasonable estimate rather than refusing.`;
+
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true"
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        messages: [{
+          role: "user",
+          content: [
+            { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
+            { type: "text", text: prompt }
+          ]
+        }]
+      })
+    });
+    if(!response.ok) throw new Error("Identification request failed (" + response.status + ")");
+    const data = await response.json();
+    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+    const clean = text.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+    if(!parsed.commonName || !parsed.baseWateringDays) throw new Error("Unexpected response shape");
+    return parsed;
+  }
+
+  async function geocodeCity(city){
+    const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`);
+    const data = await res.json();
+    if(!data.results || !data.results.length) throw new Error("Couldn't find that city");
+    const r = data.results[0];
+    return { lat: r.latitude, lon: r.longitude, label: [r.name, r.admin1, r.country].filter(Boolean).join(', ') };
+  }
+
+  async function fetchWeather(lat, lon, label){
+    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,precipitation&daily=precipitation_sum,precipitation_probability_max&timezone=auto&forecast_days=2`);
+    if(!res.ok) throw new Error("Weather request failed");
+    const data = await res.json();
+    return {
+      tempC: data.current?.temperature_2m,
+      rainProbTomorrow: data.daily?.precipitation_probability_max?.[1] ?? data.daily?.precipitation_probability_max?.[0] ?? 0,
+      rainMmTomorrow: data.daily?.precipitation_sum?.[1] ?? data.daily?.precipitation_sum?.[0] ?? 0,
+      fetchedAt: Date.now(),
+      label
+    };
+  }
+
+  function adjustedIntervalDays(plant, wx){
+    let days = plant.baseWateringDays;
+    if(!wx || typeof wx.tempC !== 'number') return Math.max(1, Math.round(days));
+    const t = wx.tempC;
+    let factor = 1;
+    if(t >= 33) factor = 0.55;
+    else if(t >= 29) factor = 0.7;
+    else if(t >= 25) factor = 0.85;
+    else if(t <= 5) factor = 1.6;
+    else if(t <= 12) factor = 1.3;
+    else if(t <= 17) factor = 1.1;
+    if(plant.location === 'outdoor'){
+      if(wx.rainMmTomorrow > 5 || wx.rainProbTomorrow > 70) factor *= 1.5;
+      else if(wx.rainMmTomorrow > 1 || wx.rainProbTomorrow > 40) factor *= 1.2;
+    }
+    return Math.max(1, Math.round(days * factor));
+  }
+
+  function getStatus(plant, wx){
+    const interval = adjustedIntervalDays(plant, wx);
+    const last = new Date((plant.lastWatered || plant.createdAt) + "T00:00:00");
+    const now = new Date(todayISO() + "T00:00:00");
+    const daysSince = Math.round((now - last) / 86400000);
+    const daysLeft = interval - daysSince;
+    const fraction = Math.max(0, Math.min(1.15, daysSince / interval));
+    const status = daysLeft <= 0 ? 'overdue' : daysLeft <= 1 ? 'soon' : 'ok';
+    const nextDate = addDays(last, interval);
+    return { interval, daysLeft, fraction, status, nextDate };
+  }
+
+  function buildICS(plant, nextDate){
+    const start = icsDate(nextDate);
+    const end = icsDate(addDays(nextDate, 1));
+    const stamp = icsDate(new Date()) + "T000000Z";
+    return [
+      "BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Botanical Log//EN","BEGIN:VEVENT",
+      `UID:${plant.id}-${start}@botanical-log`,
+      `DTSTAMP:${stamp}`,
+      `DTSTART;VALUE=DATE:${start}`,
+      `DTEND;VALUE=DATE:${end}`,
+      `SUMMARY:Water the ${plant.commonName}`,
+      `DESCRIPTION:${(plant.careTip || '').replace(/\n/g,' ')}`,
+      "END:VEVENT","END:VCALENDAR"
+    ].join("\r\n");
+  }
+
+  function downloadICS(plant, nextDate){
+    const ics = buildICS(plant, nextDate);
+    const blob = new Blob([ics], { type: "text/calendar" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `water-${plant.commonName.toLowerCase().replace(/\s+/g,'-')}.ics`;
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function googleCalUrl(plant, nextDate){
+    const start = icsDate(nextDate);
+    const end = icsDate(addDays(nextDate, 1));
+    const text = encodeURIComponent(`Water the ${plant.commonName}`);
+    const details = encodeURIComponent(plant.careTip || '');
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${start}/${end}&details=${details}`;
+  }
+
+  // ---------- rendering ----------
+  function gaugeSVG(fraction, status){
+    const color = status === 'overdue' ? '#B8503D' : status === 'soon' ? '#C79A3E' : '#3E7C93';
+    const r = 30, c = 2*Math.PI*r, filled = Math.min(1, fraction) * c;
+    return `<div class="gauge">
+      <svg width="72" height="72" viewBox="0 0 72 72" style="transform:rotate(-90deg)">
+        <circle cx="36" cy="36" r="${r}" fill="none" stroke="#D9D3BC" stroke-width="3" stroke-dasharray="2 4"/>
+        <circle cx="36" cy="36" r="${r}" fill="none" stroke="${color}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${filled} ${c}"/>
+      </svg>
+      <div class="gauge-center">💧</div>
+    </div>`;
+  }
+
+  function plantCardHTML(plant){
+    const st = getStatus(plant, weather);
+    const interval = adjustedIntervalDays(plant, weather);
+    const statusColor = st.status === 'overdue' ? 'var(--overdue)' : st.status === 'soon' ? 'var(--gold)' : 'var(--water)';
+    const statusLabel = st.status === 'overdue' ? `Overdue by ${Math.abs(st.daysLeft)}d` : st.daysLeft === 0 ? 'Water today' : `In ${st.daysLeft}d`;
+    const gcalUrl = googleCalUrl(plant, st.nextDate);
+    const confirming = confirmDeleteId === plant.id;
+    const locLabel = plant.location === 'outdoor' ? 'outdoor' : plant.location === 'either' ? 'in/out' : 'indoor';
+    return `
+    <div class="card">
+      <div class="row" style="align-items:flex-start;gap:12px;">
+        ${plant.photo ? `<img src="${plant.photo}" class="thumb" />` : `<div class="thumb thumb-placeholder">🌿</div>`}
+        <div style="flex:1;min-width:0;">
+          <p class="font-display" style="font-size:18px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(plant.commonName)}</p>
+          ${plant.species ? `<p style="font-style:italic;font-size:12px;color:var(--ink-soft);margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(plant.species)}</p>` : ''}
+        </div>
+        <button class="icon-btn" onclick="toggleDeleteConfirm('${plant.id}')" title="Delete">🗑</button>
+      </div>
+      ${confirming ? `
+      <div class="confirm-row">
+        <span>Remove this specimen?</span>
+        <span><button class="link-btn" style="color:var(--overdue);font-weight:600;text-decoration:none;" onclick="deletePlant('${plant.id}')">Yes</button>
+        &nbsp;<button class="link-btn" style="text-decoration:none;" onclick="toggleDeleteConfirm('${plant.id}')">No</button></span>
+      </div>` : ''}
+      <div class="row" style="gap:12px;align-items:center;margin-top:10px;">
+        ${gaugeSVG(st.fraction, st.status)}
+        <div style="flex:1;">
+          <p class="font-mono" style="color:${statusColor};font-size:14px;font-weight:500;margin:0;">${statusLabel}</p>
+          <p style="font-size:12px;color:var(--ink-soft);margin:2px 0 0;">every ~${interval}d · ${locLabel}</p>
+          ${plant.sunlight ? `<p style="font-size:12px;color:var(--ink-soft);margin:2px 0 0;">☀ ${escapeHtml(plant.sunlight)}</p>` : ''}
+        </div>
+      </div>
+      ${plant.careTip ? `<p class="care-tip">${escapeHtml(plant.careTip)}</p>` : ''}
+      <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:10px;">
+        <button class="btn-primary" onclick="markWatered('${plant.id}')">💧 Watered today</button>
+        <button class="btn-ghost" onclick="downloadICSFor('${plant.id}')">🗓 .ics</button>
+        <a class="btn-ghost" href="${gcalUrl}" target="_blank" rel="noopener noreferrer">🗓 Google Cal</a>
+      </div>
+    </div>`;
+  }
+
+  function renderWeatherStamp(){
+    const el = document.getElementById('weatherStamp');
+    if(weatherLoading){
+      el.innerHTML = `<span class="spin">⟳</span> <span style="font-size:13px;color:var(--ink-soft);">Loading…</span>`;
+    } else if(weather){
+      el.innerHTML = `☀ <span class="font-mono" style="font-size:15px;font-weight:500;">${Math.round(weather.tempC)}°C</span> <span style="font-size:12px;color:var(--ink-soft);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(weather.label)}</span> <button class="icon-btn" onclick="refreshWeather()" title="Refresh">⟳</button>`;
+    } else {
+      el.innerHTML = `<span style="font-size:13px;color:var(--ink-soft);">No weather yet</span> <button class="icon-btn" onclick="refreshWeather()" title="Refresh">⟳</button>`;
+    }
+  }
+  function updateWeatherErrorDisplay(){
+    document.getElementById('weatherError').textContent = weatherErrorMsg || '';
+  }
+
+  function renderAddSection(){
+    const el = document.getElementById('addSection');
+    if(!adding){
+      el.innerHTML = `<button class="dashed-btn" onclick="startAdding()">📷 Add a specimen</button>`;
+      return;
+    }
+    if(identifying){
+      el.innerHTML = `<div class="card" style="display:flex;align-items:center;gap:10px;color:var(--ink-soft);"><span class="spin">⟳</span> Identifying your plant…</div>`;
+      return;
+    }
+    if(draft){
+      el.innerHTML = `
+      <div class="card">
+        ${identifyError ? `<p style="color:var(--overdue);font-size:13px;margin-top:0;">${escapeHtml(identifyError)}</p>` : ''}
+        <div class="row" style="gap:16px;align-items:flex-start;flex-wrap:wrap;">
+          ${draft.photo ? `<img src="${draft.photo}" style="width:96px;height:96px;object-fit:cover;border-radius:10px;" />` : ''}
+          <div style="flex:1;min-width:220px;display:flex;flex-direction:column;gap:8px;">
+            <div><label class="field-label">COMMON NAME</label><input id="draftCommonName" value="${escapeHtml(draft.commonName)}" style="width:100%;" /></div>
+            <div><label class="field-label">SPECIES</label><input id="draftSpecies" value="${escapeHtml(draft.species)}" style="width:100%;font-style:italic;" /></div>
+          </div>
+        </div>
+        <div class="row" style="gap:16px;flex-wrap:wrap;margin-top:12px;">
+          <div><label class="field-label">LOCATION</label>
+            <select id="draftLocation">
+              <option value="indoor" ${draft.location === 'indoor' ? 'selected' : ''}>Indoor</option>
+              <option value="outdoor" ${draft.location === 'outdoor' ? 'selected' : ''}>Outdoor</option>
+              <option value="either" ${draft.location === 'either' ? 'selected' : ''}>Either</option>
+            </select>
+          </div>
+          <div><label class="field-label">BASE WATERING (DAYS)</label><input id="draftDays" type="number" min="1" value="${draft.baseWateringDays}" style="width:90px;" /></div>
+          <div style="flex:1;min-width:180px;"><label class="field-label">SUNLIGHT</label><input id="draftSunlight" value="${escapeHtml(draft.sunlight)}" style="width:100%;" /></div>
+        </div>
+        <div style="margin-top:12px;"><label class="field-label">CARE TIP</label><textarea id="draftCareTip" rows="2" style="width:100%;">${escapeHtml(draft.careTip)}</textarea></div>
+        <div class="row" style="gap:10px;margin-top:14px;">
+          <button class="btn-primary" style="padding:9px 16px;font-size:14px;" onclick="saveDraft()">✓ Save specimen</button>
+          <button class="btn-ghost" style="padding:9px 16px;font-size:14px;" onclick="cancelDraft()">✕ Cancel</button>
+        </div>
+      </div>`;
+      return;
+    }
+    el.innerHTML = `
+    <div class="card" style="display:flex;flex-direction:column;gap:10px;align-items:flex-start;">
+      <button class="btn-ghost" style="font-size:14px;padding:0;" onclick="document.getElementById('photoInput').click()">📷 Choose a photo…</button>
+      <button class="link-btn" style="text-decoration:none;color:var(--moss);" onclick="manualDraft()">Enter details manually instead</button>
+      <button class="link-btn" style="text-decoration:none;color:var(--ink-soft);" onclick="cancelDraft()">Cancel</button>
+    </div>`;
+  }
+
+  function renderPlantGrid(){
+    const el = document.getElementById('plantGrid');
+    el.innerHTML = plants.map(plantCardHTML).join('');
+    document.getElementById('emptyState').style.display = (plants.length === 0 && !adding) ? 'block' : 'none';
+  }
+
+  // ---------- actions ----------
+  function startAdding(){ adding = true; draft = null; identifyError = ""; renderAddSection(); }
+  function manualDraft(){ draft = { photo:null, commonName:'', species:'', location:'indoor', baseWateringDays:7, sunlight:'', careTip:'' }; identifyError=""; renderAddSection(); }
+  function cancelDraft(){ adding = false; draft = null; identifyError = ""; renderAddSection(); }
+
+  function handlePhotoChosen(event){
+    const file = event.target.files[0];
+    event.target.value = "";
+    if(!file) return;
+    identifying = true; identifyError = ""; renderAddSection();
+    resizeImageFile(file).then(({ dataUrl, base64, mediaType }) => {
+      if(settings.apiKey){
+        return identifyPlant(base64, mediaType, settings.apiKey).then(info => {
+          draft = {
+            photo: dataUrl,
+            commonName: info.commonName || '',
+            species: info.species || '',
+            location: ['indoor','outdoor','either'].includes(info.location) ? info.location : 'indoor',
+            baseWateringDays: Number(info.baseWateringDays) || 7,
+            sunlight: info.sunlight || '',
+            careTip: info.careTip || ''
+          };
+        }).catch(() => {
+          identifyError = "Couldn't identify that photo — fill in the details manually.";
+          draft = { photo: dataUrl, commonName:'', species:'', location:'indoor', baseWateringDays:7, sunlight:'', careTip:'' };
+        });
+      } else {
+        identifyError = "Add an Anthropic API key in Settings below to auto-identify plants from photos — or just fill these in yourself.";
+        draft = { photo: dataUrl, commonName:'', species:'', location:'indoor', baseWateringDays:7, sunlight:'', careTip:'' };
+      }
+    }).catch(() => {
+      identifyError = "Couldn't read that photo. Try another, or enter details manually.";
+      draft = { photo:null, commonName:'', species:'', location:'indoor', baseWateringDays:7, sunlight:'', careTip:'' };
+    }).finally(() => {
+      identifying = false; renderAddSection();
+    });
+  }
+
+  function saveDraft(){
+    const commonName = document.getElementById('draftCommonName').value.trim();
+    if(!commonName) return;
+    const plant = {
+      id: uid(),
+      photo: draft.photo,
+      commonName,
+      species: document.getElementById('draftSpecies').value.trim(),
+      location: document.getElementById('draftLocation').value,
+      baseWateringDays: Math.max(1, Number(document.getElementById('draftDays').value) || 7),
+      sunlight: document.getElementById('draftSunlight').value.trim(),
+      careTip: document.getElementById('draftCareTip').value.trim(),
+      lastWatered: todayISO(),
+      createdAt: todayISO()
+    };
+    plants.unshift(plant);
+    savePlants();
+    adding = false; draft = null; identifyError = "";
+    renderAddSection(); renderPlantGrid();
+  }
+
+  function markWatered(id){
+    plants = plants.map(p => p.id === id ? { ...p, lastWatered: todayISO() } : p);
+    savePlants(); renderPlantGrid();
+  }
+  function toggleDeleteConfirm(id){ confirmDeleteId = (confirmDeleteId === id) ? null : id; renderPlantGrid(); }
+  function deletePlant(id){ plants = plants.filter(p => p.id !== id); savePlants(); confirmDeleteId = null; renderPlantGrid(); }
+  function downloadICSFor(id){
+    const plant = plants.find(p => p.id === id);
+    if(!plant) return;
+    const st = getStatus(plant, weather);
+    downloadICS(plant, st.nextDate);
+  }
+
+  function saveApiKey(){
+    settings.apiKey = document.getElementById('apiKeyInput').value.trim();
+    saveSettings();
+    const msg = document.getElementById('apiKeySavedMsg');
+    msg.style.display = 'inline';
+    setTimeout(() => msg.style.display = 'none', 2000);
+  }
+
+  function refreshWeather(){ settings.city ? loadWeatherForCity(settings.city) : useMyLocation(); }
+
+  function handleSetCity(){
+    const v = document.getElementById('cityInput').value.trim();
+    if(v) loadWeatherForCity(v);
+  }
+
+  function loadWeatherForCity(cityName){
+    weatherLoading = true; weatherErrorMsg = ""; renderWeatherStamp(); updateWeatherErrorDisplay();
+    geocodeCity(cityName).then(geo => fetchWeather(geo.lat, geo.lon, geo.label)).then(w => {
+      weather = w; settings.city = cityName; saveSettings();
+    }).catch(err => {
+      weatherErrorMsg = err.message || "Couldn't load weather";
+    }).finally(() => {
+      weatherLoading = false; renderWeatherStamp(); updateWeatherErrorDisplay(); renderPlantGrid();
+    });
+  }
+
+  function useMyLocation(){
+    if(!navigator.geolocation){
+      weatherErrorMsg = "Location isn't available in this browser"; updateWeatherErrorDisplay(); return;
+    }
+    weatherLoading = true; weatherErrorMsg = ""; renderWeatherStamp(); updateWeatherErrorDisplay();
+    navigator.geolocation.getCurrentPosition(pos => {
+      fetchWeather(pos.coords.latitude, pos.coords.longitude, 'Current location').then(w => {
+        weather = w; settings.city = ""; saveSettings();
+        document.getElementById('cityInput').value = "";
+      }).catch(err => {
+        weatherErrorMsg = err.message || "Couldn't load weather";
+      }).finally(() => {
+        weatherLoading = false; renderWeatherStamp(); updateWeatherErrorDisplay(); renderPlantGrid();
+      });
+    }, () => {
+      weatherErrorMsg = (window.isSecureContext === false)
+        ? "Location needs this page loaded over https — try searching your city instead."
+        : "Location permission denied";
+      weatherLoading = false; renderWeatherStamp(); updateWeatherErrorDisplay();
+    });
+  }
+
+  // ---------- init ----------
+  document.addEventListener('DOMContentLoaded', () => {
+    loadState();
+    document.getElementById('cityInput').value = settings.city || '';
+    document.getElementById('apiKeyInput').value = settings.apiKey || '';
+    renderWeatherStamp();
+    renderAddSection();
+    renderPlantGrid();
+    if(settings.city) loadWeatherForCity(settings.city);
+  });
+</script>
+</body>
+</html>
