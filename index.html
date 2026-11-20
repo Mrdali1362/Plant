@@ -1,546 +1,1197 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<meta name="apple-mobile-web-app-capable" content="yes" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-<meta name="theme-color" content="#2E4429" />
-<title>Botanical Log</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TestKit</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
-
   :root{
-    --bg:#E7EADD; --card:#F6F3E7; --ink:#22331F; --ink-soft:#5B6B54;
-    --moss:#3F5C39; --moss-dark:#2E4429; --gold:#C79A3E; --water:#3E7C93;
-    --overdue:#B8503D; --line:#D9D3BC;
+    --bg:#fff; --panel:#f2f2f2; --line:#ccc; --soft:#eee; --dark:#212121; --mid:#737373;
+    --proto:#e0e0e0; --ok:#2e8a46; --okbg:#e6f5e8; --bad:#c62f2f; --badbg:#fbeaea;
+    --blue:#1a4db3; --bluebg:#dbe8ff; --note:#fff2a6;
   }
-  *{ box-sizing:border-box; }
-  body{ margin:0; background:var(--bg); color:var(--ink); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased; }
-  .font-display{ font-family:'Fraunces',serif; }
-  .font-mono{ font-family:'IBM Plex Mono',monospace; }
-  .wrap{ max-width:900px; margin:0 auto; padding:0 20px; }
-  a{ color:inherit; }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  html,body{margin:0;height:100%}
+  body{font-family:Geist,Arial,Helvetica,sans-serif;color:var(--dark);background:var(--bg);font-size:14px}
+  #app{height:100%;display:flex;flex-direction:column}
+  button,input,select,textarea{font:inherit;color:inherit}
+  button{cursor:pointer}
+  h1,h2,h3{margin:0}
+  a{color:var(--blue)}
 
-  header{ background:var(--moss-dark); padding:26px 0 18px; }
-  .header-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; }
-  .eyebrow{ color:#B9CBAF; font-size:11px; letter-spacing:0.2em; text-transform:uppercase; margin:0; }
-  h1{ color:#F6F3E7; font-size:30px; margin:4px 0 0; font-weight:600; }
-  .stamp{ background:var(--card); border-radius:999px; padding:9px 16px; display:inline-flex; align-items:center; gap:10px; border:1px solid var(--line); font-size:14px; }
-  .icon-btn{ background:none; border:none; cursor:pointer; color:var(--moss); font-size:15px; padding:2px; }
-  .city-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:14px; }
-  .city-row input{ background:transparent; border:none; border-bottom:1px solid #5A7452; color:#F6F3E7; font-size:14px; padding:4px 2px; outline:none; width:150px; font-family:'Inter',sans-serif; }
-  .city-row input::placeholder{ color:#9DB393; }
-  .link-btn{ background:none; border:none; cursor:pointer; color:#B9CBAF; font-size:12px; text-decoration:underline; font-family:'IBM Plex Mono',monospace; padding:0; }
-  #weatherError{ color:#E3B7A9; font-size:12px; }
+  /* Bar */
+  .bar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:10px 24px;background:var(--panel);border-bottom:1px solid var(--line);flex:none;min-height:54px}
+  .bar .l,.bar .r{display:flex;align-items:center;gap:14px}
+  .logo{font-weight:700;font-size:16px}
+  .crumb{color:var(--mid)}
+  .tabs{display:flex;gap:4px;margin-left:12px}
+  .tab{border:0;background:none;padding:8px 12px;border-radius:6px;font-weight:600;color:var(--mid)}
+  .tab.on{background:#fff;color:var(--dark);box-shadow:0 0 0 1px var(--line)}
+  .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:14px;background:#fff;border:1px solid var(--line);font-weight:600;font-size:13px;white-space:nowrap}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--mid);flex:none}
+  .dot.live{background:var(--bad);animation:pulse 1.2s ease-in-out infinite}
+  @keyframes pulse{50%{opacity:.2}}
+  .banner{padding:10px 24px;font-size:13px;font-weight:600;display:flex;gap:12px;align-items:center;justify-content:space-between}
+  .banner.preview{background:var(--note)}
+  .banner.warn{background:var(--badbg);color:var(--bad)}
 
-  main{ padding:28px 0 8px; }
+  /* Buttons */
+  .btn{padding:9px 16px;border-radius:999px;border:1px solid var(--dark);background:#fff;color:var(--dark);font-weight:600;white-space:nowrap}
+  .btn.primary{background:var(--dark);color:#fff}
+  .btn:disabled{opacity:.35;cursor:default}
+  .btn.small{padding:6px 12px;font-size:13px}
+  .btn.link{border:0;background:none;padding:4px 0;color:var(--mid);text-decoration:underline;font-weight:400}
+  .btn.ok{border-color:var(--ok);color:var(--ok)}
 
-  .dashed-btn{ width:100%; border:1.5px dashed var(--moss); border-radius:14px; padding:20px; background:rgba(63,92,57,0.05); color:var(--moss); cursor:pointer; font-size:17px; display:flex; align-items:center; justify-content:center; gap:10px; }
+  /* Forms */
+  .page{flex:1;overflow:auto}
+  .col{max-width:900px;margin:0 auto;padding:32px 24px 120px;display:flex;flex-direction:column;gap:20px}
+  .col.narrow{max-width:680px}
+  .card{border:1px solid var(--line);border-radius:8px;padding:20px;display:flex;flex-direction:column;gap:14px;background:#fff}
+  .card.tight{padding:14px;gap:6px}
+  .card .head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .card h3{font-size:16px}
+  .field{display:flex;flex-direction:column;gap:6px}
+  .field>label,.lbl{font-size:13px;font-weight:600;display:flex;gap:8px;align-items:center}
+  .field input[type=text],.field textarea,.field select,.inp{padding:9px 12px;border:1px solid var(--line);border-radius:6px;background:#fff;width:100%}
+  .field textarea{min-height:70px;resize:vertical;line-height:1.4}
+  .invalid{border-color:var(--bad)!important}
+  .msg{font-size:13px}
+  .msg.err{color:var(--bad)}
+  .msg.ok{color:var(--ok);font-weight:600}
+  .msg.mid{color:var(--mid)}
+  .tag{font-size:10px;font-weight:700;padding:3px 7px;border-radius:4px;background:var(--panel);color:var(--mid);letter-spacing:.03em}
+  .tag.opt{background:var(--bluebg);color:var(--blue)}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .row.end{justify-content:flex-end}
+  .row.between{justify-content:space-between}
+  .grow{flex:1}
+  .toggle{display:flex;gap:12px;align-items:flex-start;cursor:pointer}
+  .toggle input{width:18px;height:18px;margin:1px 0 0}
+  .toggle small{display:block;color:var(--mid);font-size:12px;margin-top:2px}
+  .q{display:flex;gap:8px;align-items:center}
+  .q span{font-size:12px;font-weight:600;color:var(--mid);width:24px}
+  .sticky{position:sticky;bottom:0;background:#fff;border-top:1px solid var(--line);padding:14px 24px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .sub{color:var(--mid);margin:0;line-height:1.45}
+  .pre{white-space:pre-wrap;line-height:1.5}
+  ul.plain{margin:0;padding-left:18px;line-height:1.7}
 
-  .card{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; }
-  .row{ display:flex; }
+  /* Participant task */
+  .main{flex:1;display:flex;min-height:0}
+  .side{width:360px;flex:none;background:var(--panel);padding:28px;display:flex;flex-direction:column;gap:18px;overflow:auto}
+  .eyebrow{font-size:13px;font-weight:600;color:var(--mid)}
+  .side h1{font-size:22px}
+  .side p{font-size:15px;line-height:1.45;margin:0;white-space:pre-wrap}
+  .stack{display:flex;flex-direction:column;gap:10px}
+  .stack .btn{text-align:left}
+  .stage{flex:1;background:var(--proto);position:relative;min-width:0;display:flex;flex-direction:column;align-items:center}
+  .reminder{flex:none;margin:16px 0 0;width:min(622px,90%);background:#fff;border:1px solid var(--line);border-radius:8px;padding:13px 20px;font-size:13px;color:#484848;text-align:center}
+  .protowrap{flex:1;position:relative;width:100%}
+  .protowrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .meter{display:flex;gap:3px;align-items:flex-end;height:20px}
+  .meter i{width:5px;background:var(--line);border-radius:2px}
+  .meter i.on{background:var(--ok)}
+  .camprev{width:200px;border-radius:6px;background:#000}
+  .big{font-size:30px;font-weight:600;letter-spacing:-.01em}
+  /* Task view (chosen design, 20 Nov) */
+  .tv{background:#fff}
+  .tpanel{width:380px;flex:none;background:#fff;border-right:1px solid #E6E8EC;padding:32px;display:flex;flex-direction:column;gap:20px;overflow:auto}
+  .wm{font-size:14px;font-weight:600;color:#8A8F98;margin-bottom:12px}
+  .prog{display:flex;flex-direction:column;gap:8px}
+  .plabel{font-size:13px;font-weight:600;color:#4361EE}
+  .segs{display:flex;gap:6px}
+  .segs i{flex:1;height:6px;border-radius:3px;background:#D5DBF5}
+  .segs i.on{background:#4361EE}
+  .ttext{font-size:24px;line-height:1.12;color:#111827;margin:0;white-space:pre-wrap}
+  .recw{display:flex;align-items:center;gap:10px;background:#F5F6F8;border-radius:10px;padding:14px;font-size:13px;font-weight:500;color:#2B2B2B}
+  .lvl{display:flex;gap:3px;align-items:center;height:16px}
+  .lvl i{width:3px;border-radius:2px;background:#D0D0D0;transition:background .1s}
+  .lvl i.on{background:#22A06B}
+  .tfoot{border-top:1px solid #E6E8EC;padding-top:20px;display:flex;gap:8px;align-items:center}
+  .btn.txt{border:0;background:none;color:#6B665E;font-weight:500;padding:12px}
+  .tfoot .btn.primary{flex:1;padding:12px 18px;background:#1F2328;border-color:#1F2328}
+  .stage.dark{background:#1C1D21}
+  .stage.dark .reminder{width:auto;margin-top:24px;background:#2A2F4A;color:#DCE2FF;border:0;border-radius:999px;padding:8px 14px;font-weight:600;display:inline-flex;gap:8px;align-items:center}
+  .stage.dark .protowrap{margin-top:12px}
+  /* Create screen (chosen style, 20 Nov) */
+  .create{background:#fff}
+  .cpanel{width:540px;flex:none;border-right:1px solid #E6E8EC;display:flex;flex-direction:column;min-height:0;background:#fff}
+  .cform{flex:1;overflow:auto;padding:28px 32px 32px;display:flex;flex-direction:column;gap:20px}
+  .chead{display:flex;align-items:center;gap:12px}
+  .ctabs{display:flex;gap:2px;background:#F5F6F8;border-radius:999px;padding:4px}
+  .ctabs button{border:0;background:none;border-radius:999px;padding:7px 14px;font-weight:500;font-size:13px;color:#6B7280}
+  .ctabs button.on{background:#fff;color:#111827;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .ctitle{font-size:24px;font-weight:400;line-height:1.12;color:#111827}
+  .csub{margin:6px 0 0;color:#6B7280;font-size:13px;line-height:1.5}
+  .cfield{display:flex;flex-direction:column;gap:6px}
+  .clabel{font-size:13px;font-weight:500;color:#4B5563;display:flex;gap:8px;align-items:center}
+  .ctag{font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;background:#F1F2F4;color:#6B7280;letter-spacing:.03em}
+  .ctag.opt{background:#E8ECFD;color:#4361EE}
+  .cin{width:100%;background:#F5F6F8;border:1px solid transparent;border-radius:10px;padding:11px 14px;font-size:14px;color:#111827;resize:vertical;line-height:1.45}
+  .cin:focus{outline:none;border-color:#4361EE;background:#fff}
+  .cin.small{width:auto;padding:7px 10px;font-size:13px}
+  .cpanel hr{border:0;border-top:1px solid #E6E8EC;margin:2px 0;width:100%}
+  .chips{display:flex;gap:8px}
+  .chip2{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:999px;padding:8px 14px;background:#F5F6F8;color:#4B5563;font-weight:500;font-size:13px}
+  .chip2 i{width:7px;height:7px;border-radius:50%;background:#C4C8CF}
+  .chip2.on{background:#1F2328;color:#fff}
+  .chip2.on i{background:#7CE3A5}
+  .chint{font-size:12px;color:#9CA3AF}
+  .cpreview{margin:0;color:#6B7280;font-size:13px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .csec{display:flex;align-items:center}
+  .csec h2{font-size:15px;font-weight:600}
+  .btn.link2{border:0;background:none;padding:4px 0;color:#6B7280;font-weight:500;font-size:13px}
+  .btn.link2.blue{color:#4361EE}
+  .tcard2{display:flex;flex-direction:column;gap:14px;border:1px solid #E6E8EC;border-radius:12px;padding:16px;background:#fff;text-align:left;width:100%}
+  button.tcard2{flex-direction:row;align-items:center;gap:10px;cursor:pointer}
+  button.tcard2:hover{border-color:#C9D0F0}
+  .tcard2.bad{border-color:var(--bad)}
+  .tcard2.open{border:1.5px solid #4361EE}
+  .tnum{font-size:13px;font-weight:600;color:#4B5563}
+  .tnum.blue{color:#4361EE}
+  .tname{font-size:14px;font-weight:500;color:#111827}
+  .trow{display:flex;align-items:center;gap:12px}
+  .pvpill{font-size:11px;font-weight:600;color:#4361EE;background:#E8ECFD;border-radius:999px;padding:3px 8px}
+  .qlist{display:flex;flex-direction:column;gap:6px;align-items:flex-start}
+  .qrow{display:flex;gap:10px;align-items:center;width:100%}
+  .qrow>span{font-size:12px;font-weight:600;color:#9CA3AF;width:22px;flex:none}
+  .cdisplay{display:flex;gap:16px;flex-wrap:wrap;align-items:center;font-size:13px;color:#4B5563}
+  .cdisplay label{display:flex;gap:6px;align-items:center}
+  .cfoot{border-top:1px solid #E6E8EC;padding:14px 24px 14px 20px;display:flex;align-items:center;gap:4px;background:#fff;flex-wrap:wrap}
+  .cfmsg{order:-1;flex-basis:100%;padding:0 0 6px 12px}
+  .btn.txt.dark{color:#374151}
+  .cfoot .btn.primary{padding:11px 18px;background:#1F2328;border-color:#1F2328;margin-left:6px}
+  .pvstage{flex:1;min-width:0;background:#121316;display:flex;flex-direction:column;padding:24px 28px;gap:16px}
+  .pvtop{display:flex;align-items:center}
+  .pvlabel{font-size:13px;font-weight:500;color:#A1A6B0}
+  .pvswitch{display:flex;gap:2px;background:#2A2C33;border-radius:999px;padding:4px;overflow:auto;max-width:70%}
+  .pvswitch button{border:0;background:none;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:500;color:#A1A6B0;white-space:nowrap}
+  .pvswitch button.on{background:#fff;color:#111827}
+  .pvholder{flex:1;min-height:0;display:flex;align-items:center;justify-content:center}
+  .pvbox{position:relative;overflow:hidden;border-radius:10px;box-shadow:0 0 0 1px #3D3F46,0 20px 50px rgba(0,0,0,.45)}
+  .pvscreen{position:absolute;left:0;top:0;width:1440px;height:900px;transform-origin:0 0;display:flex;flex-direction:column;background:#fff}
+  .pvscreen .tpanel{pointer-events:none}
+  .pvnote{font-size:12px;color:#7A808C;text-align:center}
+  .modal{position:fixed;inset:0;background:rgba(17,19,24,.55);display:flex;align-items:center;justify-content:center;z-index:50}
+  .mcard{background:#fff;border-radius:16px;padding:28px;width:min(620px,92vw);display:flex;flex-direction:column;gap:16px;box-shadow:0 30px 80px rgba(0,0,0,.35)}
+  a.btn{text-decoration:none;display:inline-block}
+  .pvempty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#7A808C;font-size:18px;padding:40px;text-align:center}
 
-  .field-label{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ink-soft); display:block; margin-bottom:4px; }
-  input, select, textarea{ font-family:'Inter',sans-serif; border:1px solid var(--line); border-radius:8px; padding:8px 10px; background:#fff; font-size:14px; color:var(--ink); }
-
-  .grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(240px,1fr)); gap:18px; margin-top:26px; }
-  .thumb{ width:56px; height:56px; object-fit:cover; border-radius:8px; flex-shrink:0; }
-  .thumb-placeholder{ display:flex; align-items:center; justify-content:center; background:var(--bg); font-size:22px; }
-  .care-tip{ font-size:12.5px; color:var(--ink-soft); border-top:1px dashed var(--line); padding-top:8px; margin:6px 0 0; }
-
-  .btn-primary{ background:var(--water); color:var(--card); padding:7px 12px; border-radius:7px; font-size:12.5px; border:none; cursor:pointer; display:inline-flex; align-items:center; gap:5px; }
-  .btn-ghost{ background:none; border:none; color:var(--moss); font-size:12.5px; cursor:pointer; padding:7px 4px; display:inline-flex; align-items:center; gap:5px; text-decoration:none; }
-
-  .gauge{ position:relative; width:72px; height:72px; flex-shrink:0; }
-  .gauge-center{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:18px; }
-
-  .confirm-row{ display:flex; align-items:center; justify-content:space-between; background:#F3E3DE; border-radius:8px; padding:6px 10px; margin:8px 0; font-size:12px; color:var(--overdue); }
-
-  .spin{ display:inline-block; animation:spin 1s linear infinite; }
-  @keyframes spin{ from{ transform:rotate(0);} to{ transform:rotate(360deg);} }
-
-  details.settings{ margin-top:10px; }
-  details.settings summary{ cursor:pointer; font-size:13px; color:var(--ink-soft); }
-  .settings-panel{ margin-top:10px; padding:14px; background:var(--card); border:1px solid var(--line); border-radius:10px; display:flex; flex-direction:column; gap:8px; }
-  .settings-panel .hint{ font-size:11.5px; color:var(--ink-soft); margin:0; line-height:1.5; }
-
-  footer{ text-align:center; color:var(--ink-soft); font-size:12px; padding:28px 16px 40px; }
-  #emptyState{ color:var(--ink-soft); font-size:14px; margin-top:22px; display:none; }
+  /* Review */
+  .drop{border:1.5px dashed var(--mid);border-radius:8px;background:var(--panel);padding:28px;display:flex;gap:16px;align-items:center;justify-content:center;color:var(--mid)}
+  .drop.over{background:var(--bluebg);border-color:var(--blue)}
+  table{border-collapse:collapse;width:100%}
+  th,td{text-align:left;padding:11px 10px;border-bottom:1px solid var(--soft);font-size:14px;vertical-align:middle}
+  th{font-size:12px;color:var(--mid);font-weight:600;background:var(--panel)}
+  .tbl{border:1px solid var(--line);border-radius:8px;overflow:hidden}
+  .chip{display:inline-block;font-size:12px;font-weight:700;padding:3px 8px;border-radius:10px;color:#fff;margin:2px 4px 2px 0;white-space:nowrap}
+  .chip.done{background:var(--ok)} .chip.gaveup{background:var(--bad)} .chip.none{background:var(--mid)}
+  .detail{flex:1;display:flex;min-height:0}
+  .detail .left{flex:1;min-width:0;padding:24px;overflow:auto;display:flex;flex-direction:column;gap:14px}
+  .detail .right{width:440px;flex:none;border-left:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+  .player{position:relative;background:#222;border-radius:8px;overflow:hidden}
+  .player video.main{width:100%;display:block;max-height:60vh;background:#222}
+  .player audio{width:100%;display:block;padding:24px}
+  .player video.cam{position:absolute;right:12px;bottom:56px;width:180px;border-radius:6px;border:2px solid #fff;background:#000}
+  .tl{position:relative;height:44px;background:var(--panel);border-radius:6px;cursor:pointer}
+  .seg{position:absolute;top:8px;height:22px;border-radius:3px;color:#fff;font-size:11px;font-weight:700;padding:4px 6px;overflow:hidden;white-space:nowrap}
+  .seg.done{background:var(--ok)} .seg.gaveup{background:var(--bad)} .seg.open{background:var(--mid)}
+  .qmark{position:absolute;top:4px;width:2px;height:36px;background:var(--dark)}
+  .qmark b{position:absolute;top:-2px;left:4px;font-size:10px}
+  .head-play{position:absolute;top:0;width:2px;height:44px;background:var(--bad);pointer-events:none}
+  .tcards{display:flex;gap:10px;flex-wrap:wrap}
+  .tcard{flex:1;min-width:180px;border:1px solid var(--line);border-radius:8px;padding:12px;cursor:pointer;background:#fff;text-align:left}
+  .tcard b{display:block;margin-bottom:4px}
+  .rtabs{display:flex;gap:4px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .rbody{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+  .line{display:grid;grid-template-columns:48px 1fr;gap:10px;padding:6px 8px;border-radius:6px;cursor:pointer;line-height:1.4}
+  .line:hover{background:var(--panel)}
+  .line.cur{background:var(--bluebg)}
+  .line .t{color:var(--blue);font-weight:700;font-variant-numeric:tabular-nums;font-size:13px}
+  mark{background:var(--note)}
+  .qa b{display:block;font-size:13px;margin-bottom:4px}
+  .qa div{white-space:pre-wrap;line-height:1.45}
+  .progress{height:6px;background:var(--soft);border-radius:3px;overflow:hidden}
+  .progress i{display:block;height:100%;background:var(--dark);width:0}
+  .empty{text-align:center;color:var(--mid);padding:40px}
 </style>
 </head>
 <body>
+<div id="app"></div>
+<script id="testkit-app">
+(() => {
+"use strict";
+// Captured before anything renders, so a participant file can be built from it.
+const SOURCE = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+const EMBEDDED = (() => { const el = document.getElementById("testkit-test"); if (!el) return null; try { return JSON.parse(el.textContent); } catch { return null; } })();
+const APP_TAG = '<script id="testkit-' + 'app">';
+const HOSTED = /^https?:$/.test(location.protocol);
+const TRANSFORMERS_URL = "https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2";
 
-<header>
-  <div class="wrap">
-    <div class="header-top">
-      <div>
-        <p class="eyebrow font-mono">Field Journal</p>
-        <h1 class="font-display">Botanical Log</h1>
-      </div>
-      <div class="stamp" id="weatherStamp"></div>
-    </div>
-    <div class="city-row">
-      <span style="color:#B9CBAF;font-size:13px;">📍</span>
-      <input id="cityInput" placeholder="Enter your city" onkeydown="if(event.key==='Enter') handleSetCity()" />
-      <button class="link-btn" onclick="handleSetCity()">set</button>
-      <button class="link-btn" onclick="useMyLocation()">use my location</button>
-      <span id="weatherError"></span>
-    </div>
-  </div>
-</header>
-
-<main class="wrap">
-  <div id="addSection"></div>
-
-  <details class="settings">
-    <summary>⚙ Settings — photo identification</summary>
-    <div class="settings-panel">
-      <label class="field-label">ANTHROPIC API KEY (OPTIONAL)</label>
-      <input id="apiKeyInput" type="password" placeholder="sk-ant-..." />
-      <div>
-        <button class="btn-ghost" style="padding:6px 0;" onclick="saveApiKey()">Save key</button>
-        <span id="apiKeySavedMsg" style="display:none;color:var(--water);font-size:12px;">saved ✓</span>
-      </div>
-      <p class="hint">Adding your own Anthropic API key lets this app identify plants from photos, calling Claude directly from your browser. The key is stored only on this device (browser local storage) — it is never sent anywhere except Anthropic's API. Don't hand this file to anyone with your key still filled in. Without a key, everything still works — you just enter plant details yourself instead of photo ID.</p>
-    </div>
-  </details>
-
-  <div id="plantGrid" class="grid"></div>
-  <p id="emptyState">No specimens logged yet. Add one above — with a saved API key, a photo is enough; otherwise fill in the details yourself.</p>
-</main>
-
-<footer>Estimates only, adjusted for current temperature and rain — always check the soil before watering.</footer>
-
-<input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhotoChosen(event)" />
-
-<script>
-  // ---------- state ----------
-  let plants = [];
-  let settings = {};
-  let weather = null;
-  let weatherLoading = false;
-  let weatherErrorMsg = "";
-  let adding = false;
-  let identifying = false;
-  let identifyError = "";
-  let draft = null;
-  let confirmDeleteId = null;
-
-  // ---------- storage ----------
-  function loadState(){
-    try{ plants = JSON.parse(localStorage.getItem('botlog_plants') || '[]'); }catch(e){ plants = []; }
-    try{ settings = JSON.parse(localStorage.getItem('botlog_settings') || '{}'); }catch(e){ settings = {}; }
+/* ============================== helpers ============================== */
+function h(tag, props, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (v == null || v === false) continue;
+    if (k === "class") el.className = v;
+    else if (k === "style") el.style.cssText = v;
+    else if (k.startsWith("on") && typeof v === "function") el.addEventListener(k.slice(2).toLowerCase(), v);
+    else if (k === "value" || k === "checked" || k === "muted" || k === "srcObject") el[k] = v;
+    else el.setAttribute(k, v === true ? "" : v);
   }
-  function savePlants(){ localStorage.setItem('botlog_plants', JSON.stringify(plants)); }
-  function saveSettings(){ localStorage.setItem('botlog_settings', JSON.stringify(settings)); }
-
-  // ---------- helpers ----------
-  const todayISO = () => new Date().toISOString().slice(0,10);
-  const addDays = (date, n) => new Date(date.getTime() + n*86400000);
-  const icsDate = (d) => d.toISOString().slice(0,10).replace(/-/g,'');
-  const uid = () => (crypto.randomUUID && crypto.randomUUID()) || (Date.now()+'-'+Math.random().toString(16).slice(2));
-  function escapeHtml(str){
-    return String(str).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
-  }
-
-  function resizeImageFile(file, maxWidth=500){
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const scale = Math.min(1, maxWidth/img.width);
-          const w = Math.max(1, Math.round(img.width*scale));
-          const h = Math.max(1, Math.round(img.height*scale));
-          const canvas = document.createElement('canvas');
-          canvas.width = w; canvas.height = h;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, w, h);
-          const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
-          resolve({ dataUrl, base64: dataUrl.split(',')[1], mediaType: 'image/jpeg' });
-        };
-        img.onerror = () => reject(new Error('Could not read image'));
-        img.src = e.target.result;
-      };
-      reader.onerror = () => reject(new Error('Could not read file'));
-      reader.readAsDataURL(file);
-    });
-  }
-
-  async function identifyPlant(base64, mediaType, apiKey){
-    const prompt = `You are an expert botanist helping identify houseplants and garden plants from photos.
-Look at this image and identify the plant. Respond with ONLY a JSON object and nothing else — no markdown formatting, no code fences, no explanation before or after — in exactly this shape:
-{"commonName": string, "species": string, "location": "indoor" or "outdoor" or "either", "baseWateringDays": number, "sunlight": short string, "careTip": short string}
-"baseWateringDays" should be the typical number of days between waterings for this plant in mild, average conditions (around 20-22C, moderate humidity, no unusual weather). If you cannot identify the exact species, give your best general guess at the plant type or family and still provide a reasonable estimate rather than refusing.`;
-
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 1000,
-        messages: [{
-          role: "user",
-          content: [
-            { type: "image", source: { type: "base64", media_type: mediaType, data: base64 } },
-            { type: "text", text: prompt }
-          ]
-        }]
-      })
-    });
-    if(!response.ok) throw new Error("Identification request failed (" + response.status + ")");
-    const data = await response.json();
-    const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
-    const clean = text.replace(/```json|```/g, '').trim();
-    const parsed = JSON.parse(clean);
-    if(!parsed.commonName || !parsed.baseWateringDays) throw new Error("Unexpected response shape");
-    return parsed;
-  }
-
-  async function geocodeCity(city){
-    const res = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`);
-    const data = await res.json();
-    if(!data.results || !data.results.length) throw new Error("Couldn't find that city");
-    const r = data.results[0];
-    return { lat: r.latitude, lon: r.longitude, label: [r.name, r.admin1, r.country].filter(Boolean).join(', ') };
-  }
-
-  async function fetchWeather(lat, lon, label){
-    const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,precipitation&daily=precipitation_sum,precipitation_probability_max&timezone=auto&forecast_days=2`);
-    if(!res.ok) throw new Error("Weather request failed");
-    const data = await res.json();
-    return {
-      tempC: data.current?.temperature_2m,
-      rainProbTomorrow: data.daily?.precipitation_probability_max?.[1] ?? data.daily?.precipitation_probability_max?.[0] ?? 0,
-      rainMmTomorrow: data.daily?.precipitation_sum?.[1] ?? data.daily?.precipitation_sum?.[0] ?? 0,
-      fetchedAt: Date.now(),
-      label
-    };
-  }
-
-  function adjustedIntervalDays(plant, wx){
-    let days = plant.baseWateringDays;
-    if(!wx || typeof wx.tempC !== 'number') return Math.max(1, Math.round(days));
-    const t = wx.tempC;
-    let factor = 1;
-    if(t >= 33) factor = 0.55;
-    else if(t >= 29) factor = 0.7;
-    else if(t >= 25) factor = 0.85;
-    else if(t <= 5) factor = 1.6;
-    else if(t <= 12) factor = 1.3;
-    else if(t <= 17) factor = 1.1;
-    if(plant.location === 'outdoor'){
-      if(wx.rainMmTomorrow > 5 || wx.rainProbTomorrow > 70) factor *= 1.5;
-      else if(wx.rainMmTomorrow > 1 || wx.rainProbTomorrow > 40) factor *= 1.2;
-    }
-    return Math.max(1, Math.round(days * factor));
-  }
-
-  function getStatus(plant, wx){
-    const interval = adjustedIntervalDays(plant, wx);
-    const last = new Date((plant.lastWatered || plant.createdAt) + "T00:00:00");
-    const now = new Date(todayISO() + "T00:00:00");
-    const daysSince = Math.round((now - last) / 86400000);
-    const daysLeft = interval - daysSince;
-    const fraction = Math.max(0, Math.min(1.15, daysSince / interval));
-    const status = daysLeft <= 0 ? 'overdue' : daysLeft <= 1 ? 'soon' : 'ok';
-    const nextDate = addDays(last, interval);
-    return { interval, daysLeft, fraction, status, nextDate };
-  }
-
-  function buildICS(plant, nextDate){
-    const start = icsDate(nextDate);
-    const end = icsDate(addDays(nextDate, 1));
-    const stamp = icsDate(new Date()) + "T000000Z";
-    return [
-      "BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Botanical Log//EN","BEGIN:VEVENT",
-      `UID:${plant.id}-${start}@botanical-log`,
-      `DTSTAMP:${stamp}`,
-      `DTSTART;VALUE=DATE:${start}`,
-      `DTEND;VALUE=DATE:${end}`,
-      `SUMMARY:Water the ${plant.commonName}`,
-      `DESCRIPTION:${(plant.careTip || '').replace(/\n/g,' ')}`,
-      "END:VEVENT","END:VCALENDAR"
-    ].join("\r\n");
-  }
-
-  function downloadICS(plant, nextDate){
-    const ics = buildICS(plant, nextDate);
-    const blob = new Blob([ics], { type: "text/calendar" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `water-${plant.commonName.toLowerCase().replace(/\s+/g,'-')}.ics`;
-    document.body.appendChild(a); a.click(); a.remove();
-    URL.revokeObjectURL(url);
-  }
-
-  function googleCalUrl(plant, nextDate){
-    const start = icsDate(nextDate);
-    const end = icsDate(addDays(nextDate, 1));
-    const text = encodeURIComponent(`Water the ${plant.commonName}`);
-    const details = encodeURIComponent(plant.careTip || '');
-    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${text}&dates=${start}/${end}&details=${details}`;
-  }
-
-  // ---------- rendering ----------
-  function gaugeSVG(fraction, status){
-    const color = status === 'overdue' ? '#B8503D' : status === 'soon' ? '#C79A3E' : '#3E7C93';
-    const r = 30, c = 2*Math.PI*r, filled = Math.min(1, fraction) * c;
-    return `<div class="gauge">
-      <svg width="72" height="72" viewBox="0 0 72 72" style="transform:rotate(-90deg)">
-        <circle cx="36" cy="36" r="${r}" fill="none" stroke="#D9D3BC" stroke-width="3" stroke-dasharray="2 4"/>
-        <circle cx="36" cy="36" r="${r}" fill="none" stroke="${color}" stroke-width="4" stroke-linecap="round" stroke-dasharray="${filled} ${c}"/>
-      </svg>
-      <div class="gauge-center">💧</div>
-    </div>`;
-  }
-
-  function plantCardHTML(plant){
-    const st = getStatus(plant, weather);
-    const interval = adjustedIntervalDays(plant, weather);
-    const statusColor = st.status === 'overdue' ? 'var(--overdue)' : st.status === 'soon' ? 'var(--gold)' : 'var(--water)';
-    const statusLabel = st.status === 'overdue' ? `Overdue by ${Math.abs(st.daysLeft)}d` : st.daysLeft === 0 ? 'Water today' : `In ${st.daysLeft}d`;
-    const gcalUrl = googleCalUrl(plant, st.nextDate);
-    const confirming = confirmDeleteId === plant.id;
-    const locLabel = plant.location === 'outdoor' ? 'outdoor' : plant.location === 'either' ? 'in/out' : 'indoor';
-    return `
-    <div class="card">
-      <div class="row" style="align-items:flex-start;gap:12px;">
-        ${plant.photo ? `<img src="${plant.photo}" class="thumb" />` : `<div class="thumb thumb-placeholder">🌿</div>`}
-        <div style="flex:1;min-width:0;">
-          <p class="font-display" style="font-size:18px;margin:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(plant.commonName)}</p>
-          ${plant.species ? `<p style="font-style:italic;font-size:12px;color:var(--ink-soft);margin:2px 0 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(plant.species)}</p>` : ''}
-        </div>
-        <button class="icon-btn" onclick="toggleDeleteConfirm('${plant.id}')" title="Delete">🗑</button>
-      </div>
-      ${confirming ? `
-      <div class="confirm-row">
-        <span>Remove this specimen?</span>
-        <span><button class="link-btn" style="color:var(--overdue);font-weight:600;text-decoration:none;" onclick="deletePlant('${plant.id}')">Yes</button>
-        &nbsp;<button class="link-btn" style="text-decoration:none;" onclick="toggleDeleteConfirm('${plant.id}')">No</button></span>
-      </div>` : ''}
-      <div class="row" style="gap:12px;align-items:center;margin-top:10px;">
-        ${gaugeSVG(st.fraction, st.status)}
-        <div style="flex:1;">
-          <p class="font-mono" style="color:${statusColor};font-size:14px;font-weight:500;margin:0;">${statusLabel}</p>
-          <p style="font-size:12px;color:var(--ink-soft);margin:2px 0 0;">every ~${interval}d · ${locLabel}</p>
-          ${plant.sunlight ? `<p style="font-size:12px;color:var(--ink-soft);margin:2px 0 0;">☀ ${escapeHtml(plant.sunlight)}</p>` : ''}
-        </div>
-      </div>
-      ${plant.careTip ? `<p class="care-tip">${escapeHtml(plant.careTip)}</p>` : ''}
-      <div class="row" style="gap:6px;flex-wrap:wrap;margin-top:10px;">
-        <button class="btn-primary" onclick="markWatered('${plant.id}')">💧 Watered today</button>
-        <button class="btn-ghost" onclick="downloadICSFor('${plant.id}')">🗓 .ics</button>
-        <a class="btn-ghost" href="${gcalUrl}" target="_blank" rel="noopener noreferrer">🗓 Google Cal</a>
-      </div>
-    </div>`;
-  }
-
-  function renderWeatherStamp(){
-    const el = document.getElementById('weatherStamp');
-    if(weatherLoading){
-      el.innerHTML = `<span class="spin">⟳</span> <span style="font-size:13px;color:var(--ink-soft);">Loading…</span>`;
-    } else if(weather){
-      el.innerHTML = `☀ <span class="font-mono" style="font-size:15px;font-weight:500;">${Math.round(weather.tempC)}°C</span> <span style="font-size:12px;color:var(--ink-soft);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(weather.label)}</span> <button class="icon-btn" onclick="refreshWeather()" title="Refresh">⟳</button>`;
-    } else {
-      el.innerHTML = `<span style="font-size:13px;color:var(--ink-soft);">No weather yet</span> <button class="icon-btn" onclick="refreshWeather()" title="Refresh">⟳</button>`;
-    }
-  }
-  function updateWeatherErrorDisplay(){
-    document.getElementById('weatherError').textContent = weatherErrorMsg || '';
-  }
-
-  function renderAddSection(){
-    const el = document.getElementById('addSection');
-    if(!adding){
-      el.innerHTML = `<button class="dashed-btn" onclick="startAdding()">📷 Add a specimen</button>`;
-      return;
-    }
-    if(identifying){
-      el.innerHTML = `<div class="card" style="display:flex;align-items:center;gap:10px;color:var(--ink-soft);"><span class="spin">⟳</span> Identifying your plant…</div>`;
-      return;
-    }
-    if(draft){
-      el.innerHTML = `
-      <div class="card">
-        ${identifyError ? `<p style="color:var(--overdue);font-size:13px;margin-top:0;">${escapeHtml(identifyError)}</p>` : ''}
-        <div class="row" style="gap:16px;align-items:flex-start;flex-wrap:wrap;">
-          ${draft.photo ? `<img src="${draft.photo}" style="width:96px;height:96px;object-fit:cover;border-radius:10px;" />` : ''}
-          <div style="flex:1;min-width:220px;display:flex;flex-direction:column;gap:8px;">
-            <div><label class="field-label">COMMON NAME</label><input id="draftCommonName" value="${escapeHtml(draft.commonName)}" style="width:100%;" /></div>
-            <div><label class="field-label">SPECIES</label><input id="draftSpecies" value="${escapeHtml(draft.species)}" style="width:100%;font-style:italic;" /></div>
-          </div>
-        </div>
-        <div class="row" style="gap:16px;flex-wrap:wrap;margin-top:12px;">
-          <div><label class="field-label">LOCATION</label>
-            <select id="draftLocation">
-              <option value="indoor" ${draft.location === 'indoor' ? 'selected' : ''}>Indoor</option>
-              <option value="outdoor" ${draft.location === 'outdoor' ? 'selected' : ''}>Outdoor</option>
-              <option value="either" ${draft.location === 'either' ? 'selected' : ''}>Either</option>
-            </select>
-          </div>
-          <div><label class="field-label">BASE WATERING (DAYS)</label><input id="draftDays" type="number" min="1" value="${draft.baseWateringDays}" style="width:90px;" /></div>
-          <div style="flex:1;min-width:180px;"><label class="field-label">SUNLIGHT</label><input id="draftSunlight" value="${escapeHtml(draft.sunlight)}" style="width:100%;" /></div>
-        </div>
-        <div style="margin-top:12px;"><label class="field-label">CARE TIP</label><textarea id="draftCareTip" rows="2" style="width:100%;">${escapeHtml(draft.careTip)}</textarea></div>
-        <div class="row" style="gap:10px;margin-top:14px;">
-          <button class="btn-primary" style="padding:9px 16px;font-size:14px;" onclick="saveDraft()">✓ Save specimen</button>
-          <button class="btn-ghost" style="padding:9px 16px;font-size:14px;" onclick="cancelDraft()">✕ Cancel</button>
-        </div>
-      </div>`;
-      return;
-    }
-    el.innerHTML = `
-    <div class="card" style="display:flex;flex-direction:column;gap:10px;align-items:flex-start;">
-      <button class="btn-ghost" style="font-size:14px;padding:0;" onclick="document.getElementById('photoInput').click()">📷 Choose a photo…</button>
-      <button class="link-btn" style="text-decoration:none;color:var(--moss);" onclick="manualDraft()">Enter details manually instead</button>
-      <button class="link-btn" style="text-decoration:none;color:var(--ink-soft);" onclick="cancelDraft()">Cancel</button>
-    </div>`;
-  }
-
-  function renderPlantGrid(){
-    const el = document.getElementById('plantGrid');
-    el.innerHTML = plants.map(plantCardHTML).join('');
-    document.getElementById('emptyState').style.display = (plants.length === 0 && !adding) ? 'block' : 'none';
-  }
-
-  // ---------- actions ----------
-  function startAdding(){ adding = true; draft = null; identifyError = ""; renderAddSection(); }
-  function manualDraft(){ draft = { photo:null, commonName:'', species:'', location:'indoor', baseWateringDays:7, sunlight:'', careTip:'' }; identifyError=""; renderAddSection(); }
-  function cancelDraft(){ adding = false; draft = null; identifyError = ""; renderAddSection(); }
-
-  function handlePhotoChosen(event){
-    const file = event.target.files[0];
-    event.target.value = "";
-    if(!file) return;
-    identifying = true; identifyError = ""; renderAddSection();
-    resizeImageFile(file).then(({ dataUrl, base64, mediaType }) => {
-      if(settings.apiKey){
-        return identifyPlant(base64, mediaType, settings.apiKey).then(info => {
-          draft = {
-            photo: dataUrl,
-            commonName: info.commonName || '',
-            species: info.species || '',
-            location: ['indoor','outdoor','either'].includes(info.location) ? info.location : 'indoor',
-            baseWateringDays: Number(info.baseWateringDays) || 7,
-            sunlight: info.sunlight || '',
-            careTip: info.careTip || ''
-          };
-        }).catch(() => {
-          identifyError = "Couldn't identify that photo — fill in the details manually.";
-          draft = { photo: dataUrl, commonName:'', species:'', location:'indoor', baseWateringDays:7, sunlight:'', careTip:'' };
-        });
-      } else {
-        identifyError = "Add an Anthropic API key in Settings below to auto-identify plants from photos — or just fill these in yourself.";
-        draft = { photo: dataUrl, commonName:'', species:'', location:'indoor', baseWateringDays:7, sunlight:'', careTip:'' };
-      }
-    }).catch(() => {
-      identifyError = "Couldn't read that photo. Try another, or enter details manually.";
-      draft = { photo:null, commonName:'', species:'', location:'indoor', baseWateringDays:7, sunlight:'', careTip:'' };
-    }).finally(() => {
-      identifying = false; renderAddSection();
-    });
-  }
-
-  function saveDraft(){
-    const commonName = document.getElementById('draftCommonName').value.trim();
-    if(!commonName) return;
-    const plant = {
-      id: uid(),
-      photo: draft.photo,
-      commonName,
-      species: document.getElementById('draftSpecies').value.trim(),
-      location: document.getElementById('draftLocation').value,
-      baseWateringDays: Math.max(1, Number(document.getElementById('draftDays').value) || 7),
-      sunlight: document.getElementById('draftSunlight').value.trim(),
-      careTip: document.getElementById('draftCareTip').value.trim(),
-      lastWatered: todayISO(),
-      createdAt: todayISO()
-    };
-    plants.unshift(plant);
-    savePlants();
-    adding = false; draft = null; identifyError = "";
-    renderAddSection(); renderPlantGrid();
-  }
-
-  function markWatered(id){
-    plants = plants.map(p => p.id === id ? { ...p, lastWatered: todayISO() } : p);
-    savePlants(); renderPlantGrid();
-  }
-  function toggleDeleteConfirm(id){ confirmDeleteId = (confirmDeleteId === id) ? null : id; renderPlantGrid(); }
-  function deletePlant(id){ plants = plants.filter(p => p.id !== id); savePlants(); confirmDeleteId = null; renderPlantGrid(); }
-  function downloadICSFor(id){
-    const plant = plants.find(p => p.id === id);
-    if(!plant) return;
-    const st = getStatus(plant, weather);
-    downloadICS(plant, st.nextDate);
-  }
-
-  function saveApiKey(){
-    settings.apiKey = document.getElementById('apiKeyInput').value.trim();
-    saveSettings();
-    const msg = document.getElementById('apiKeySavedMsg');
-    msg.style.display = 'inline';
-    setTimeout(() => msg.style.display = 'none', 2000);
-  }
-
-  function refreshWeather(){ settings.city ? loadWeatherForCity(settings.city) : useMyLocation(); }
-
-  function handleSetCity(){
-    const v = document.getElementById('cityInput').value.trim();
-    if(v) loadWeatherForCity(v);
-  }
-
-  function loadWeatherForCity(cityName){
-    weatherLoading = true; weatherErrorMsg = ""; renderWeatherStamp(); updateWeatherErrorDisplay();
-    geocodeCity(cityName).then(geo => fetchWeather(geo.lat, geo.lon, geo.label)).then(w => {
-      weather = w; settings.city = cityName; saveSettings();
-    }).catch(err => {
-      weatherErrorMsg = err.message || "Couldn't load weather";
-    }).finally(() => {
-      weatherLoading = false; renderWeatherStamp(); updateWeatherErrorDisplay(); renderPlantGrid();
-    });
-  }
-
-  function useMyLocation(){
-    if(!navigator.geolocation){
-      weatherErrorMsg = "Location isn't available in this browser"; updateWeatherErrorDisplay(); return;
-    }
-    weatherLoading = true; weatherErrorMsg = ""; renderWeatherStamp(); updateWeatherErrorDisplay();
-    navigator.geolocation.getCurrentPosition(pos => {
-      fetchWeather(pos.coords.latitude, pos.coords.longitude, 'Current location').then(w => {
-        weather = w; settings.city = ""; saveSettings();
-        document.getElementById('cityInput').value = "";
-      }).catch(err => {
-        weatherErrorMsg = err.message || "Couldn't load weather";
-      }).finally(() => {
-        weatherLoading = false; renderWeatherStamp(); updateWeatherErrorDisplay(); renderPlantGrid();
-      });
-    }, () => {
-      weatherErrorMsg = (window.isSecureContext === false)
-        ? "Location needs this page loaded over https — try searching your city instead."
-        : "Location permission denied";
-      weatherLoading = false; renderWeatherStamp(); updateWeatherErrorDisplay();
-    });
-  }
-
-  // ---------- init ----------
-  document.addEventListener('DOMContentLoaded', () => {
-    loadState();
-    document.getElementById('cityInput').value = settings.city || '';
-    document.getElementById('apiKeyInput').value = settings.apiKey || '';
-    renderWeatherStamp();
-    renderAddSection();
-    renderPlantGrid();
-    if(settings.city) loadWeatherForCity(settings.city);
+  for (const c of kids.flat(Infinity)) { if (c == null || c === false) continue; el.append(c instanceof Node ? c : document.createTextNode(String(c))); }
+  return el;
+}
+const app = document.getElementById("app");
+function mount(...nodes) { app.replaceChildren(...nodes.flat().filter(Boolean)); }
+const fmt = ms => { const s = Math.max(0, Math.floor(ms / 1000)); return String(Math.floor(s / 60)).padStart(2, "0") + ":" + String(s % 60).padStart(2, "0"); };
+const slug = s => (s || "test").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "test";
+const uid = () => Math.random().toString(36).slice(2, 9);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function download(blob, name) {
+  const url = URL.createObjectURL(blob);
+  const a = h("a", { href: url, download: name });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+function pickFile(accept, multiple) {
+  return new Promise(res => {
+    const i = h("input", { type: "file", accept, multiple: multiple || null, style: "display:none" });
+    i.addEventListener("change", () => { res([...i.files]); i.remove(); });
+    document.body.append(i); i.click();
   });
+}
+function Bar(left, right) {
+  return h("div", { class: "bar" }, h("div", { class: "l" }, h("span", { class: "logo" }, "TestKit"), left), h("div", { class: "r" }, right));
+}
+
+/* ============================== Figma links ============================== */
+function parseFigmaLink(raw) {
+  let s = (raw || "").trim();
+  if (!s) throw new Error("Paste a Figma link for this task.");
+  const m = s.match(/src=["']([^"']+)["']/i);
+  if (m) s = m[1];
+  s = s.replace(/&amp;/g, "&");
+  let u;
+  try { u = new URL(s); } catch { throw new Error("That doesn't look like a link. It should start with https://www.figma.com/"); }
+  if (u.hostname === "www.figma.com" && u.pathname === "/embed" && u.searchParams.get("url")) return parseFigmaLink(u.searchParams.get("url"));
+  if (!/(^|\.)figma\.com$/.test(u.hostname)) throw new Error("This is not a Figma link.");
+  const parts = u.pathname.split("/").filter(Boolean);
+  const kind = parts[0];
+  if (!["proto", "design", "file"].includes(kind)) {
+    if (["board", "slides", "make", "deck", "site"].includes(kind)) throw new Error(`This is a Figma ${kind} link. Use a prototype or design file link.`);
+    throw new Error("Couldn't find a Figma file in this link.");
+  }
+  if (parts[1] === "new") throw new Error("This file isn't saved yet. Save it in Figma and copy the link again.");
+  let key = parts[1], name = parts[2] || "";
+  if (parts[2] === "branch" && parts[3]) { key = parts[3]; name = parts[4] || ""; }
+  if (!key || !/^[0-9a-zA-Z]{10,}$/.test(key)) throw new Error("Couldn't read the file key from this link.");
+  const keep = {};
+  for (const p of ["node-id", "starting-point-node-id", "page-id", "version-id"]) if (u.searchParams.get(p)) keep[p] = u.searchParams.get(p);
+  let label = "Figma file";
+  try { if (name) label = decodeURIComponent(name).replace(/-/g, " "); } catch {}
+  return { key, name, keep, wasDesign: kind !== "proto", label };
+}
+function embedUrl(link, d) {
+  const p = parseFigmaLink(link);
+  const q = new URLSearchParams(p.keep);
+  q.set("embed-host", "testkit"); q.set("footer", "false");
+  q.set("device-frame", String(!!d.frame)); q.set("hotspot-hints", String(!!d.hints));
+  q.set("viewport-controls", String(!!d.viewport)); q.set("scaling", d.scaling || "scale-down");
+  let nm = ""; try { nm = p.name ? "/" + encodeURIComponent(decodeURIComponent(p.name)) : ""; } catch { nm = ""; }
+  return `https://embed.figma.com/proto/${p.key}${nm}?${q}`;
+}
+
+/* ============================== ZIP (store only) ============================== */
+const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+function crc32(buf) { let c = 0xFFFFFFFF; for (let i = 0; i < buf.length; i++) c = CRC[(c ^ buf[i]) & 0xFF] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+async function makeZip(files) {
+  const enc = new TextEncoder(), parts = [], central = []; let offset = 0;
+  for (const f of files) {
+    const data = new Uint8Array(await f.blob.arrayBuffer());
+    const crc = crc32(data), name = enc.encode(f.name), size = data.length;
+    const lh = new DataView(new ArrayBuffer(30));
+    lh.setUint32(0, 0x04034b50, true); lh.setUint16(4, 20, true); lh.setUint16(6, 0x0800, true); lh.setUint16(8, 0, true);
+    lh.setUint16(10, 0, true); lh.setUint16(12, 0x21, true); lh.setUint32(14, crc, true); lh.setUint32(18, size, true); lh.setUint32(22, size, true);
+    lh.setUint16(26, name.length, true); lh.setUint16(28, 0, true);
+    parts.push(lh.buffer, name, f.blob);
+    const ch = new DataView(new ArrayBuffer(46));
+    ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint16(8, 0x0800, true); ch.setUint16(10, 0, true);
+    ch.setUint16(12, 0, true); ch.setUint16(14, 0x21, true); ch.setUint32(16, crc, true); ch.setUint32(20, size, true); ch.setUint32(24, size, true);
+    ch.setUint16(28, name.length, true); ch.setUint32(42, offset, true);
+    central.push(ch.buffer, name);
+    offset += 30 + name.length + size;
+  }
+  const cdSize = central.reduce((a, b) => a + b.byteLength, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true); end.setUint16(8, files.length, true); end.setUint16(10, files.length, true);
+  end.setUint32(12, cdSize, true); end.setUint32(16, offset, true);
+  return new Blob([...parts, ...central, end.buffer], { type: "application/zip" });
+}
+async function readZip(file) {
+  const tailStart = Math.max(0, file.size - 22 - 65535);
+  const tail = new DataView(await file.slice(tailStart).arrayBuffer());
+  let e = -1;
+  for (let i = tail.byteLength - 22; i >= 0; i--) if (tail.getUint32(i, true) === 0x06054b50) { e = i; break; }
+  if (e < 0) throw new Error("This is not a TestKit session file.");
+  const count = tail.getUint16(e + 10, true), cdSize = tail.getUint32(e + 12, true), cdOff = tail.getUint32(e + 16, true);
+  const cd = new DataView(await file.slice(cdOff, cdOff + cdSize).arrayBuffer());
+  const dec = new TextDecoder(), out = {};
+  let p = 0;
+  for (let i = 0; i < count; i++) {
+    if (cd.getUint32(p, true) !== 0x02014b50) throw new Error("The session file is damaged.");
+    const method = cd.getUint16(p + 10, true), csize = cd.getUint32(p + 20, true);
+    const nlen = cd.getUint16(p + 28, true), xlen = cd.getUint16(p + 30, true), clen = cd.getUint16(p + 32, true), loff = cd.getUint32(p + 42, true);
+    const name = dec.decode(new Uint8Array(cd.buffer, p + 46, nlen));
+    if (method !== 0) throw new Error("The session file uses an unsupported format.");
+    const lh = new DataView(await file.slice(loff, loff + 30).arrayBuffer());
+    const start = loff + 30 + lh.getUint16(26, true) + lh.getUint16(28, true);
+    out[name] = file.slice(start, start + csize);
+    p += 46 + nlen + xlen + clen;
+  }
+  return out;
+}
+
+/* ============================== Test model ============================== */
+const DEFAULT_CONSENT = "During this test we will record your voice and your screen while you use the prototype. Only the test owner will see the recordings. They are used to improve the design and are deleted after 90 days. You can stop at any time, and you can ask for your recording to be deleted.";
+function newTask(n) { return { id: uid(), title: "", text: "", link: "", questions: n === 0 ? ["How did that go?", "What, if anything, was confusing?"] : ["What, if anything, was confusing?"] }; }
+function newTest() {
+  return { v: 1, id: uid(), name: "", welcome: "Thanks for helping! You'll try a prototype and talk out loud while you do it. There are no wrong answers. We are testing the design, not you.",
+    consent: DEFAULT_CONSENT, returnTo: "", capture: { voice: true, screen: true, camera: false },
+    display: { frame: true, hints: false, viewport: false, scaling: "scale-down" }, tasks: [newTask(0)] };
+}
+function normaliseTest(t) {
+  const d = newTest();
+  const out = { ...d, ...t, capture: { ...d.capture, ...(t.capture || {}) }, display: { ...d.display, ...(t.display || {}) } };
+  out.tasks = (Array.isArray(t.tasks) && t.tasks.length ? t.tasks : d.tasks).map(x => ({ id: x.id || uid(), title: x.title || "", text: x.text || "", link: x.link || "", questions: Array.isArray(x.questions) ? x.questions.slice() : [] }));
+  return out;
+}
+function validateTest(t) {
+  const errs = {};
+  if (!t.name.trim()) errs.name = "Give the test a name.";
+  if (!t.consent.trim()) errs.consent = "Consent text is required.";
+  if (!t.capture.voice && !t.capture.screen && !t.capture.camera) errs.capture = "Choose at least one thing to record.";
+  t.tasks.forEach((k, i) => {
+    if (!k.title.trim()) errs["title" + i] = "Add a title.";
+    try { parseFigmaLink(k.link); } catch (e) { errs["link" + i] = e.message; }
+  });
+  return errs;
+}
+function captureList(c) {
+  const l = [];
+  if (c.voice) l.push("Your voice, while you think out loud");
+  if (c.screen) l.push("The prototype area of this tab, while you use it");
+  if (c.camera) l.push("Your camera");
+  return l;
+}
+
+/* ============================== Researcher: create ============================== */
+const R = { test: null, tab: "create", errors: {}, sessions: [], current: null };
+function loadDraft() { try { const s = localStorage.getItem("testkit:draft"); if (s) return normaliseTest(JSON.parse(s)); } catch {} return newTest(); }
+function saveDraft() { try { localStorage.setItem("testkit:draft", JSON.stringify(R.test)); } catch {} }
+
+function researcherBar() {
+  const tab = (id, label) => h("button", { class: "tab" + (R.tab === id ? " on" : ""), onclick: () => { R.tab = id; R.current = null; renderResearcher(); } }, label);
+  return Bar(h("div", { class: "tabs" }, tab("create", "Create test"), tab("review", "Review sessions")), null);
+}
+function renderResearcher() {
+  if (R.tab === "review") return R.current ? renderDetail(R.current) : renderReview();
+  renderCreate();
+}
+
+/* ---------- shared participant task view (used live and in the preview) ---------- */
+const MIC_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#A9B6FF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1"/><path d="M12 18v4"/></svg>';
+function taskView(test, i, opts = {}) {
+  const k = test.tasks[i], n = test.tasks.length;
+  let src = null; try { src = embedUrl(k.link, test.display); } catch {}
+  const frame = src ? h("iframe", { src, allowfullscreen: true, title: "Prototype for task " + (i + 1) }) : h("div", { class: "pvempty" }, "Paste a Figma link for this task to see the prototype here.");
+  const wrap = h("div", { class: "protowrap" }, frame);
+  const bars = [6, 11, 16, 8, 13, 5].map(px => h("i", { style: `height:${px}px` }));
+  const timer = h("span", null, "Recording · 00:00");
+  const label = h("div", { class: "plabel" }, `Task ${i + 1} of ${n}`);
+  const segs = h("div", { class: "segs" }, test.tasks.map((_, j) => h("i", { class: j <= i ? "on" : null })));
+  const text = h("p", { class: "ttext" }, k.text.trim() || k.title || "Task text appears here.");
+  const mic = h("span", { style: "display:inline-flex" }); mic.innerHTML = MIC_SVG;
+  const node = h("div", { class: "main tv" },
+    h("aside", { class: "tpanel" },
+      h("div", { class: "wm" }, "TestKit"),
+      h("div", { class: "prog" }, label, segs),
+      text,
+      h("div", { class: "grow" }),
+      h("div", { class: "recw" }, h("span", { class: "dot" + (opts.live ? " live" : "") }), timer, h("span", { class: "grow" }), test.capture.voice ? h("div", { class: "lvl" }, bars) : null),
+      h("div", { class: "tfoot" },
+        h("button", { class: "btn txt", onclick: opts.onGiveUp || null }, "I give up"),
+        h("button", { class: "btn primary", onclick: opts.onDone || null }, "I'm done"))),
+    h("section", { class: "stage dark" }, h("div", { class: "reminder" }, mic, "Please don't forget to talk out loud."), wrap));
+  return { node, wrap, timer, bars, label, segs, text, src };
+}
+
+/* ---------- create screen ---------- */
+R.sel = 0; R.pv = 0; R.consentOpen = false;
+function inputEl(value, oninput, o = {}) {
+  const el = o.multi
+    ? h("textarea", { class: "cin" + (o.err ? " invalid" : ""), value, placeholder: o.placeholder || "", rows: o.rows || 3 })
+    : h("input", { type: "text", class: "cin" + (o.err ? " invalid" : ""), value, placeholder: o.placeholder || "" });
+  el.addEventListener("input", e => { oninput(e.target.value); e.target.classList.remove("invalid"); const m = e.target.parentElement && e.target.parentElement.querySelector(":scope > .msg.err"); if (m) m.remove(); saveDraft(); if (o.preview !== false) schedulePreview(); });
+  if (o.onblur) el.addEventListener("blur", o.onblur);
+  return el;
+}
+function cfield(label, ctrl, o = {}) {
+  return h("div", { class: "cfield" }, h("div", { class: "clabel" }, label, o.tag ? h("span", { class: "ctag" + (o.tag === "OPTIONAL" ? " opt" : "") }, o.tag) : null), ctrl,
+    o.err ? h("div", { class: "msg err" }, o.err) : o.after || null);
+}
+function renderCreate() {
+  const t = R.test, E = R.errors;
+  if (Object.keys(E).length) { const fresh = validateTest(t); for (const k of Object.keys(E)) if (!fresh[k]) delete E[k]; }
+  if (R.sel >= t.tasks.length) R.sel = t.tasks.length - 1;
+  if (typeof R.pv === "number" && R.pv >= t.tasks.length) R.pv = t.tasks.length - 1;
+
+  const tabs = h("div", { class: "ctabs" },
+    h("button", { class: "on" }, "Create test"),
+    h("button", { onclick: () => { R.tab = "review"; R.current = null; renderResearcher(); } }, "Review sessions"));
+
+  const chip = (key, label) => h("button", { class: "chip2" + (t.capture[key] ? " on" : ""), "aria-pressed": String(t.capture[key]), onclick: () => { t.capture[key] = !t.capture[key]; delete R.errors.capture; saveDraft(); renderCreate(); } }, h("i"), label);
+
+  const consentBody = R.consentOpen || E.consent
+    ? inputEl(t.consent, v => t.consent = v, { multi: true, rows: 6, err: E.consent, preview: true })
+    : h("p", { class: "cpreview" }, t.consent || "No consent text yet.");
+
+  const tasks = t.tasks.map((k, i) => taskCard(k, i));
+
+  const d = t.display;
+  const display = h("div", { class: "cdisplay" },
+    ...[["frame", "Device frame"], ["hints", "Hotspot hints"], ["viewport", "Pan and zoom"]].map(([key, l]) =>
+      h("label", null, h("input", { type: "checkbox", checked: d[key], onchange: e => { d[key] = e.target.checked; saveDraft(); renderPreview(true); } }), l)),
+    h("select", { class: "cin small", onchange: e => { d.scaling = e.target.value; saveDraft(); renderPreview(true); } },
+      ...[["scale-down", "Scale down to fit"], ["contain", "Contain"], ["fit-width", "Fit width"], ["min-zoom", "Actual size"]].map(([v, l]) => h("option", { value: v, selected: d.scaling === v || null }, l))));
+
+  const hasErr = Object.keys(E).length > 0;
+  const form = h("div", { class: "cform" },
+    h("div", { class: "chead" }, h("span", { class: "wm", style: "margin:0" }, "TestKit"), h("span", { class: "grow" }), tabs),
+    h("div", null, h("div", { class: "row between" }, h("h1", { class: "ctitle" }, t.name.trim() || "New test"),
+        h("button", { class: "btn link2", onclick: () => { if (confirmInline("Start a new, empty test? Unsaved changes to this one are lost.")) { R.test = newTest(); R.errors = {}; R.sel = 0; R.pv = 0; saveDraft(); renderCreate(); } } }, "New test")),
+      h("p", { class: "csub" }, "Build the test, check it in the preview, then create a participant file to send.")),
+    cfield("Test name", inputEl(t.name, v => { t.name = v; }, { placeholder: "e.g. Speaker app onboarding, round 1", err: E.name, preview: false }), { err: E.name }),
+    cfield("Welcome message", inputEl(t.welcome, v => t.welcome = v, { multi: true, rows: 3 })),
+    h("hr"),
+    cfield("Record", h("div", { class: "chips" }, chip("voice", "Voice"), chip("screen", "Screen"), chip("camera", "Camera")),
+      { err: E.capture, after: h("div", { class: "chint" }, "Only the prototype area is recorded. Recording pauses during questions.") }),
+    h("hr"),
+    h("div", { class: "cfield" },
+      h("div", { class: "clabel" }, "Consent text", h("span", { class: "ctag" }, "REQUIRED"), h("span", { class: "grow" }),
+        h("button", { class: "btn link2", onclick: () => { R.consentOpen = !R.consentOpen; renderCreate(); } }, R.consentOpen ? "Done" : "Edit")),
+      consentBody, E.consent ? h("div", { class: "msg err" }, E.consent) : null),
+    cfield("Where should participants send their session file?", inputEl(t.returnTo, v => t.returnTo = v, { placeholder: "e.g. Send it to Ali in Teams", preview: false }), { tag: "OPTIONAL" }),
+    h("hr"),
+    h("div", { class: "csec" }, h("h2", null, "Tasks"), h("span", { class: "grow" }),
+      h("button", { class: "btn link2 blue", onclick: () => { t.tasks.push(newTask(t.tasks.length)); R.sel = t.tasks.length - 1; R.pv = R.sel; saveDraft(); renderCreate(); } }, "+ Add task")),
+    tasks,
+    h("hr"),
+    h("div", { class: "csec" }, h("h2", null, "Prototype display")),
+    display);
+
+  const foot = h("div", { class: "cfoot" },
+    h("button", { class: "btn txt", onclick: openTestFile }, "Open"),
+    h("button", { class: "btn txt", onclick: () => download(new Blob([JSON.stringify(R.test, null, 2)], { type: "application/json" }), slug(t.name) + ".testkit.json") }, "Save"),
+    hasErr ? h("span", { class: "msg err cfmsg", id: "fixmsg" }, "Fix the highlighted fields first.") : null,
+    h("span", { class: "grow" }),
+    h("button", { class: "btn txt dark", onclick: () => { if (checkTest()) startParticipant(R.test, { preview: true }); } }, "Preview"),
+    HOSTED ? h("button", { class: "btn primary", onclick: showParticipantLink }, "Get participant link")
+           : h("button", { class: "btn primary", onclick: createParticipantFile, title: "Host this page (e.g. on GitHub Pages) to share a link instead" }, "Create participant file"));
+
+  const panel = h("aside", { class: "cpanel" }, form, foot);
+  const scrollTop = app.querySelector(".cform") ? app.querySelector(".cform").scrollTop : 0;
+
+  R.pvBar = h("div", { class: "pvswitch" });
+  R.pvHolder = h("div", { class: "pvholder" });
+  const stage = h("section", { class: "pvstage" },
+    h("div", { class: "pvtop" }, h("span", { class: "pvlabel" }, "Live preview"), h("span", { class: "grow" }), R.pvBar),
+    R.pvHolder,
+    h("div", { class: "pvnote" }, "This is what participants see. Recording, timer and buttons are inactive here. You can click through the prototype."));
+  mount(h("div", { class: "main create" }, panel, stage));
+  app.querySelector(".cform").scrollTop = scrollTop;
+  R.pvKey = null;
+  renderPreview(true);
+  if (!R.pvObs) {
+    R.pvObs = new ResizeObserver(() => fitPreview());
+  }
+  R.pvObs.disconnect(); R.pvObs.observe(R.pvHolder);
+}
+function confirmInline(text) { return window.confirm ? window.confirm(text) : true; }
+
+function taskCard(k, i) {
+  const t = R.test, E = R.errors, sel = R.sel === i;
+  const errHere = E["title" + i] || E["link" + i];
+  let linkOk = null; try { linkOk = parseFigmaLink(k.link); } catch {}
+  if (!sel) {
+    return h("button", { class: "tcard2" + (errHere ? " bad" : ""), onclick: () => { R.sel = i; R.pv = i; renderCreate(); } },
+      h("span", { class: "tnum" }, `Task ${i + 1}`), h("span", { class: "tname" }, k.title.trim() || "Untitled task"), h("span", { class: "grow" }),
+      errHere ? h("span", { class: "msg err" }, "Needs attention") : linkOk ? h("span", { class: "msg ok" }, "✓ " + linkOk.label) : h("span", { class: "msg mid" }, "No prototype yet"));
+  }
+  const linkMsg = h("div", { class: "msg" });
+  const linkInput = inputEl(k.link, v => { k.link = v; delete E["link" + i]; }, { placeholder: "https://www.figma.com/proto/…", err: E["link" + i] });
+  const showLink = strict => {
+    if (!k.link.trim() && !strict) { linkMsg.textContent = ""; return; }
+    try { const p = parseFigmaLink(k.link); linkMsg.className = "msg ok"; linkMsg.textContent = "✓ " + p.label + (p.wasDesign ? " (design link, shown in prototype mode)" : ""); linkInput.classList.remove("invalid"); }
+    catch (e) { linkMsg.className = "msg err"; linkMsg.textContent = e.message; linkInput.classList.add("invalid"); }
+  };
+  linkInput.addEventListener("blur", () => showLink(false));
+  linkInput.addEventListener("paste", () => setTimeout(() => showLink(false), 0));
+  setTimeout(() => showLink(!!E["link" + i]), 0);
+
+  const qs = k.questions.map((q, qi) => h("div", { class: "qrow" }, h("span", null, "Q" + (qi + 1)),
+    inputEl(q, v => k.questions[qi] = v, { placeholder: "Question", preview: false }),
+    h("button", { class: "btn link2", onclick: () => { k.questions.splice(qi, 1); saveDraft(); renderCreate(); } }, "Remove")));
+
+  return h("div", { class: "tcard2 open" },
+    h("div", { class: "trow" }, h("span", { class: "tnum blue" }, `Task ${i + 1}`), h("span", { class: "grow" }),
+      i > 0 ? h("button", { class: "btn link2", onclick: () => { [t.tasks[i - 1], t.tasks[i]] = [t.tasks[i], t.tasks[i - 1]]; R.sel = i - 1; R.pv = i - 1; saveDraft(); renderCreate(); } }, "Move up") : null,
+      t.tasks.length > 1 ? h("button", { class: "btn link2", onclick: () => { t.tasks.splice(i, 1); R.errors = {}; R.sel = Math.max(0, i - 1); R.pv = R.sel; saveDraft(); renderCreate(); } }, "Remove") : null,
+      h("span", { class: "pvpill" }, "Previewing")),
+    cfield("Title", inputEl(k.title, v => { k.title = v; delete E["title" + i]; }, { placeholder: "e.g. Find the EQ settings", err: E["title" + i] }), { err: E["title" + i] }),
+    cfield("Task shown to participant", inputEl(k.text, v => k.text = v, { multi: true, rows: 3, placeholder: "What should the participant try to do?" })),
+    cfield("Figma prototype", linkInput, { after: h("div", null, linkMsg, i > 0 ? h("button", { class: "btn link2", onclick: () => { k.link = t.tasks[i - 1].link; saveDraft(); renderCreate(); } }, `Use the same prototype as task ${i}`) : null) }),
+    cfield("Questions after this task", h("div", { class: "qlist" }, qs, h("button", { class: "btn link2 blue", onclick: () => { k.questions.push(""); saveDraft(); renderCreate(); } }, "+ Add question")), { tag: "OPTIONAL" }));
+}
+
+/* ---------- live preview ---------- */
+let pvTimer = null;
+function schedulePreview() { clearTimeout(pvTimer); pvTimer = setTimeout(() => renderPreview(false), 250); }
+function renderPreview(force) {
+  if (!R.pvHolder) return;
+  const t = R.test;
+  R.pvBar.replaceChildren(
+    h("button", { class: R.pv === "welcome" ? "on" : null, onclick: () => { R.pv = "welcome"; renderPreview(true); } }, "Welcome"),
+    ...t.tasks.map((_, i) => h("button", { class: R.pv === i ? "on" : null, onclick: () => { R.pv = i; if (R.sel !== i) { R.sel = i; renderCreate(); } else renderPreview(true); } }, `Task ${i + 1}`)));
+  if (R.pv === "welcome") {
+    R.pvKey = "welcome";
+    const box = previewBox(welcomePreview(t));
+    R.pvHolder.replaceChildren(box); fitPreview(); return;
+  }
+  const i = R.pv;
+  let src = null; try { src = embedUrl(t.tasks[i].link, t.display); } catch {}
+  const key = i + "|" + src;
+  if (!force && R.pvKey === key && R.pvRefs) {
+    const k = t.tasks[i];
+    R.pvRefs.text.textContent = k.text.trim() || k.title || "Task text appears here.";
+    return;
+  }
+  R.pvKey = key;
+  R.pvRefs = taskView(t, i, {});
+  R.pvHolder.replaceChildren(previewBox(R.pvRefs.node)); fitPreview();
+}
+function previewBox(node) { const scr = h("div", { class: "pvscreen" }, node); return h("div", { class: "pvbox" }, scr); }
+function fitPreview() {
+  const box = R.pvHolder && R.pvHolder.querySelector(".pvbox"); if (!box) return;
+  const w = R.pvHolder.clientWidth, hh = R.pvHolder.clientHeight;
+  const k = Math.max(0.2, Math.min(w / 1440, hh / 900));
+  box.style.width = 1440 * k + "px"; box.style.height = 900 * k + "px";
+  box.firstChild.style.transform = `scale(${k})`;
+}
+function welcomePreview(t) {
+  return h("div", { class: "page", style: "background:#fff" }, h("div", { class: "col narrow" },
+    h("h1", { class: "big" }, "Welcome, and thanks for helping"),
+    t.welcome ? h("p", { class: "pre", style: "font-size:16px;margin:0" }, t.welcome) : null,
+    h("div", { class: "card" }, h("h3", null, "What we will record"), h("ul", { class: "plain" }, captureList(t.capture).map(x => h("li", null, x)))),
+    h("div", { class: "card" }, h("h3", null, "Consent"), h("div", { class: "pre" }, t.consent)),
+    h("label", { class: "row", style: "gap:10px" }, h("input", { type: "checkbox", disabled: true }), "I agree to be recorded as described above"),
+    h("div", null, h("button", { class: "btn primary", disabled: true }, "Continue"))));
+}
+
+function checkTest() {
+  R.test.tasks.forEach(k => k.questions = k.questions.filter(q => q.trim()));
+  R.errors = validateTest(R.test);
+  const bad = R.test.tasks.findIndex((_, i) => R.errors["title" + i] || R.errors["link" + i]);
+  if (bad >= 0) { R.sel = bad; R.pv = bad; }
+  if (R.errors.consent) R.consentOpen = true;
+  saveDraft();
+  renderCreate();
+  if (Object.keys(R.errors).length) { const el = app.querySelector(".invalid, .msg.err"); if (el) el.scrollIntoView({ block: "center" }); return false; }
+  return true;
+}
+async function openTestFile() {
+  const [f] = await pickFile(".json,application/json");
+  if (!f) return;
+  try { R.test = normaliseTest(JSON.parse(await f.text())); R.errors = {}; saveDraft(); renderCreate(); }
+  catch { alertInline("That file isn't a TestKit test file."); }
+}
+function alertInline(text) { try { window.alert(text); } catch {} }
+/* ---------- participant links (when hosted, e.g. GitHub Pages) ---------- */
+function b64url(bytes) { let s = ""; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); }
+function unb64url(str) { const b = atob(str.replace(/-/g, "+").replace(/_/g, "/")); const out = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) out[i] = b.charCodeAt(i); return out; }
+async function encodeTest(t) {
+  const json = JSON.stringify(t);
+  try { const buf = await new Response(new Blob([json]).stream().pipeThrough(new CompressionStream("deflate-raw"))).arrayBuffer(); return "z" + b64url(new Uint8Array(buf)); }
+  catch { return "j" + b64url(new TextEncoder().encode(json)); }
+}
+async function decodeTest(str) {
+  const kind = str[0], bytes = unb64url(str.slice(1));
+  if (kind === "z") return JSON.parse(await new Response(new Blob([bytes]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text());
+  if (kind === "j") return JSON.parse(new TextDecoder().decode(bytes));
+  throw new Error("Unknown link format");
+}
+async function showParticipantLink() {
+  if (!checkTest()) return;
+  const t = JSON.parse(JSON.stringify(R.test));
+  const url = location.origin + location.pathname + "#t=" + await encodeTest(t);
+  const input = h("input", { type: "text", class: "cin", value: url, readonly: true, onfocus: e => e.target.select() });
+  const status = h("span", { class: "msg ok" });
+  const copy = async () => { try { await navigator.clipboard.writeText(url); status.textContent = "✓ Copied"; } catch { input.select(); status.className = "msg mid"; status.textContent = "Press Ctrl+C (or Cmd+C) to copy"; } };
+  const close = () => overlay.remove();
+  const overlay = h("div", { class: "modal", onclick: e => { if (e.target === overlay) close(); } },
+    h("div", { class: "mcard" },
+      h("h2", { class: "ctitle" }, "Participant link"),
+      h("p", { class: "csub" }, "Send this link to colleagues in Teams or email. They open it in Chrome or Edge, take the test and send back their session file."),
+      input,
+      h("div", { class: "row" }, h("button", { class: "btn primary", onclick: copy }, "Copy link"),
+        h("a", { class: "btn", href: url, target: "_blank", rel: "noopener" }, "Open as participant"), status),
+      h("div", { class: "chint", style: "line-height:1.5" }, `The test lives inside the link (${url.length} characters), not on the server, so editing the test later means sending a new link. Anyone with the link can see the task texts and Figma links. Recordings never leave the participant's computer until they send the file.`),
+      h("div", { class: "row end" }, h("button", { class: "btn txt", onclick: close }, "Close"))));
+  document.body.append(overlay);
+  copy();
+}
+function createParticipantFile() {
+  if (!checkTest()) return;
+  const data = JSON.stringify(R.test).replace(/</g, "\\u003c");
+  const TEST_OPEN = '<script id="testkit-' + 'test" type="application/json">';
+  const existing = new RegExp('<script id="testkit-' + 'test"[\\s\\S]*?</' + 'script>\\s*');
+  const html = SOURCE.replace(existing, "").replace(APP_TAG, () => TEST_OPEN + data + "</" + "script>\n" + APP_TAG);
+  download(new Blob([html], { type: "text/html" }), slug(R.test.name) + "-participant.html");
+}
+
+/* ============================== Recording ============================== */
+const Rec = {
+  mic: null, screen: null, cam: null, recs: {}, chunks: {}, active: 0, resumedAt: 0, running: false, started: false,
+  now() { return this.active + (this.running ? performance.now() - this.resumedAt : 0); },
+  pick(types) { return types.find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t)) || ""; },
+  start() {
+    const v = this.pick(["video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"]);
+    const vOnly = this.pick(["video/webm;codecs=vp9", "video/webm;codecs=vp8", "video/webm"]);
+    const a = this.pick(["audio/webm;codecs=opus", "audio/webm"]);
+    const add = (name, stream, opts) => {
+      const r = new MediaRecorder(stream, opts);
+      this.chunks[name] = [];
+      r.ondataavailable = e => { if (e.data && e.data.size) this.chunks[name].push(e.data); };
+      this.recs[name] = r;
+    };
+    if (this.screen) {
+      const tracks = [...this.screen.getVideoTracks(), ...(this.mic ? this.mic.getAudioTracks() : [])];
+      add("screen", new MediaStream(tracks), { mimeType: this.mic ? v : vOnly, videoBitsPerSecond: 1500000, audioBitsPerSecond: 64000 });
+    }
+    if (this.mic) add("audio", new MediaStream(this.mic.getAudioTracks()), { mimeType: a, audioBitsPerSecond: 48000 });
+    if (this.cam) add("camera", new MediaStream(this.cam.getVideoTracks()), { mimeType: vOnly, videoBitsPerSecond: 350000 });
+    Object.values(this.recs).forEach(r => r.start(1000));
+    this.started = true; this.running = true; this.resumedAt = performance.now();
+  },
+  pause() { if (!this.running) return; Object.values(this.recs).forEach(r => { if (r.state === "recording") r.pause(); }); this.active += performance.now() - this.resumedAt; this.running = false; },
+  resume() { if (this.running || !this.started) return; Object.values(this.recs).forEach(r => { if (r.state === "paused") r.resume(); }); this.resumedAt = performance.now(); this.running = true; },
+  async stop() {
+    this.pause();
+    await Promise.all(Object.values(this.recs).map(r => new Promise(res => { if (r.state === "inactive") return res(); r.onstop = res; r.stop(); })));
+    const out = {};
+    for (const [k, c] of Object.entries(this.chunks)) out[k] = new Blob(c, { type: (this.recs[k].mimeType || "video/webm").split(";")[0] });
+    this.release();
+    return out;
+  },
+  level() {
+    if (!this.mic) return 0;
+    try {
+      if (!this._an) { this._ac = new AudioContext(); const src = this._ac.createMediaStreamSource(this.mic); this._an = this._ac.createAnalyser(); this._an.fftSize = 512; src.connect(this._an); this._buf = new Uint8Array(512); }
+      this._an.getByteTimeDomainData(this._buf);
+      let s = 0; for (const x of this._buf) { const v = (x - 128) / 128; s += v * v; }
+      return Math.sqrt(s / this._buf.length);
+    } catch { return 0; }
+  },
+  release() { [this.mic, this.screen, this.cam].forEach(s => s && s.getTracks().forEach(t => t.stop())); if (this._ac) { try { this._ac.close(); } catch {} } this._ac = null; this._an = null; },
+  reset() { this.release(); Object.assign(this, { mic: null, screen: null, cam: null, recs: {}, chunks: {}, active: 0, resumedAt: 0, running: false, started: false }); }
+};
+
+/* ============================== Participant ============================== */
+const P = { test: null, preview: false, idx: 0, session: null, taskStart: 0, timerId: null, saved: false, zip: null, fileName: "", screenLost: false };
+
+function startParticipant(test, opts = {}) {
+  Rec.reset();
+  P.test = test; P.preview = !!opts.preview; P.idx = 0; P.saved = false; P.zip = null; P.screenLost = false;
+  P.session = { v: 1, kind: "testkit-session", test: JSON.parse(JSON.stringify(test)), participant: { name: "" }, startedAt: null, finishedAt: null,
+    userAgent: navigator.userAgent, preview: P.preview, events: [], tasks: test.tasks.map((k, i) => ({ index: i, title: k.title, outcome: null, startT: null, endT: null, durationMs: null, answers: k.questions.map(q => ({ q, a: "" })) })) };
+  document.title = test.name || "TestKit";
+  showWelcome();
+}
+function participantBar(right) {
+  return [Bar(h("span", { class: "crumb" }, P.test.name), right),
+    P.preview ? h("div", { class: "banner preview" }, h("span", null, "Preview. This is how participants see the test. Your recording is not sent anywhere."), h("button", { class: "btn small", onclick: exitPreview }, "Back to editor")) : null,
+    P.screenLost ? h("div", { class: "banner warn" }, "Screen sharing stopped. Your voice is still being recorded, so you can carry on.") : null];
+}
+function exitPreview() { clearInterval(P.timerId); Rec.reset(); window.onbeforeunload = null; document.title = "TestKit"; R.tab = "create"; renderResearcher(); }
+function ev(type, extra) { P.session.events.push({ t: Math.round(Rec.now()), at: new Date().toISOString(), type, ...extra }); }
+
+function showWelcome() {
+  const t = P.test;
+  const agree = h("input", { type: "checkbox", style: "width:18px;height:18px", onchange: e => { cont.disabled = !e.target.checked; } });
+  const name = h("input", { type: "text", class: "inp", placeholder: "e.g. AD", value: P.session.participant.name, oninput: e => P.session.participant.name = e.target.value });
+  const cont = h("button", { class: "btn primary", disabled: true, onclick: () => { P.session.consentedAt = new Date().toISOString(); showCheck(); } }, "Continue");
+  mount(participantBar(), h("div", { class: "page" }, h("div", { class: "col narrow" },
+    h("h1", { class: "big" }, "Welcome, and thanks for helping"),
+    t.welcome ? h("p", { class: "pre", style: "font-size:16px;margin:0" }, t.welcome) : null,
+    h("div", { class: "card" }, h("h3", null, "What we will record"), h("ul", { class: "plain" }, captureList(t.capture).map(x => h("li", null, x)))),
+    h("div", { class: "card" }, h("h3", null, "Consent"), h("div", { class: "pre" }, t.consent)),
+    h("div", { class: "field" }, h("label", null, "Your name or initials", h("span", { class: "tag opt" }, "OPTIONAL")), name),
+    h("label", { class: "row", style: "gap:10px;cursor:pointer" }, agree, "I agree to be recorded as described above"),
+    h("div", null, cont),
+    h("p", { class: "sub" }, `${t.tasks.length} task${t.tasks.length === 1 ? "" : "s"}. Use Chrome or Edge on a laptop or desktop.`))));
+}
+
+function showCheck() {
+  const c = P.test.capture;
+  const state = { mic: !c.voice, screen: !c.screen, cam: !c.camera };
+  const start = h("button", { class: "btn primary", disabled: true, onclick: () => { P.session.startedAt = new Date().toISOString(); startTask(0); } }, "Start task 1");
+  const update = () => { start.disabled = !(state.mic && state.screen && state.cam); };
+  const permHelp = "If you blocked it, click the icon at the left of the address bar, allow access, and try again.";
+
+  // Microphone
+  let micCard = null;
+  if (c.voice) {
+    const bars = Array.from({ length: 16 }, (_, i) => h("i", { style: `height:${6 + (i % 5) * 3}px` }));
+    const status = h("span", { class: "msg mid" }, "Not connected yet");
+    const btn = h("button", { class: "btn primary small", onclick: async () => {
+      try {
+        Rec.mic = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+        btn.hidden = true; status.textContent = "Say: \"Testing, one two three\"";
+        const ac = new AudioContext(), src = ac.createMediaStreamSource(Rec.mic), an = ac.createAnalyser();
+        an.fftSize = 512; src.connect(an);
+        const data = new Uint8Array(an.fftSize); let heard = 0;
+        const tick = () => {
+          if (!document.body.contains(status)) { ac.close(); return; }
+          an.getByteTimeDomainData(data);
+          let s = 0; for (const x of data) { const v = (x - 128) / 128; s += v * v; }
+          const rms = Math.sqrt(s / data.length), lit = Math.min(bars.length, Math.round(rms * 120));
+          bars.forEach((b, i) => b.classList.toggle("on", i < lit));
+          if (rms > 0.03) heard++;
+          if (heard > 8 && !state.mic) { state.mic = true; status.className = "msg ok"; status.textContent = "✓ We can hear you"; update(); }
+          requestAnimationFrame(tick);
+        };
+        tick();
+      } catch (e) { status.className = "msg err"; status.textContent = "Couldn't use the microphone. " + permHelp; }
+    } }, "Allow microphone");
+    micCard = h("div", { class: "card" }, h("h3", null, "Microphone"), h("div", { class: "row" }, btn, h("div", { class: "meter" }, bars), status));
+  }
+
+  // Screen
+  let scrCard = null;
+  if (c.screen) {
+    const status = h("span", { class: "msg mid" }, "");
+    const btn = h("button", { class: "btn primary small", onclick: async () => {
+      try {
+        const s = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: "browser", frameRate: 15, width: { max: 1920 }, height: { max: 1080 } }, audio: false,
+          preferCurrentTab: true, selfBrowserSurface: "include", surfaceSwitching: "exclude" });
+        Rec.screen = s;
+        const tr = s.getVideoTracks()[0];
+        tr.addEventListener("ended", () => { if (Rec.started && !P.screenLost) { P.screenLost = true; ev("screen_share_stopped"); refreshTaskBanner(); } });
+        const surface = tr.getSettings().displaySurface;
+        state.screen = true; btn.hidden = true; status.className = "msg ok";
+        status.textContent = surface === "browser" ? "✓ Sharing this tab" : "✓ Sharing your screen";
+        update();
+      } catch (e) { status.className = "msg err"; status.textContent = "Screen sharing was cancelled or blocked. Try again and choose this tab."; }
+    } }, "Share this tab");
+    scrCard = h("div", { class: "card" }, h("h3", null, "Share this tab"),
+      h("p", { class: "sub" }, "Chrome will ask what to share. Choose this tab, then Share. Only the prototype area is recorded, not the rest of the page. Keep this tab open for the whole test."),
+      h("div", { class: "row" }, btn, status));
+  }
+
+  // Camera
+  let camCard = null;
+  if (c.camera) {
+    const status = h("span", { class: "msg mid" }, "");
+    const video = h("video", { class: "camprev", autoplay: true, muted: true, playsinline: true, hidden: true });
+    const btn = h("button", { class: "btn primary small", onclick: async () => {
+      try {
+        Rec.cam = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 640 }, height: { ideal: 480 }, frameRate: 15 } });
+        video.srcObject = Rec.cam; video.hidden = false; btn.hidden = true;
+        state.cam = true; status.className = "msg ok"; status.textContent = "✓ Camera on"; update();
+      } catch (e) { status.className = "msg err"; status.textContent = "Couldn't use the camera. " + permHelp; }
+    } }, "Allow camera");
+    camCard = h("div", { class: "card" }, h("h3", null, "Camera"), h("div", { class: "row" }, btn, status), video);
+  }
+
+  mount(participantBar(), h("div", { class: "page" }, h("div", { class: "col narrow" },
+    h("h1", { class: "big" }, "Quick setup check"),
+    h("p", { class: "sub" }, "Your browser will ask for permission. Choose Allow."),
+    micCard, scrCard, camCard,
+    h("div", { class: "card tight", style: "background:var(--panel);border:0" }, h("b", null, "How to think aloud"), h("span", { class: "sub" }, "Say what you are looking at, what you expect to happen, and anything that surprises or confuses you. Keep talking, even when it feels obvious.")),
+    h("div", null, start))));
+  update();
+}
+
+let taskBannerHost = null;
+function refreshTaskBanner() { if (taskBannerHost) taskBannerHost.replaceChildren(...participantBar(null).slice(1).filter(Boolean)); }
+let pillText = null;
+function taskPill() {
+  pillText = h("span", null, "Recording");
+  return h("span", { class: "pill" }, h("span", { class: "dot live" }), pillText);
+}
+async function cropToPrototype(el) {
+  const tr = Rec.screen && Rec.screen.getVideoTracks()[0];
+  if (!tr || tr.readyState !== "live") return;
+  if (!("CropTarget" in window) || typeof tr.cropTo !== "function") { P.session.recordingArea = "whole share (this browser can't crop)"; return; }
+  try {
+    const target = await CropTarget.fromElement(el);
+    await tr.cropTo(target);
+    P.session.recordingArea = "prototype area";
+  } catch (e) {
+    // Happens when the participant shared another tab or the whole screen
+    P.session.recordingArea = "whole share";
+    ev("crop_failed", { task: P.idx, message: String(e.message || e) });
+  }
+}
+async function startTask(i) {
+  P.idx = i;
+  const k = P.test.tasks[i], s = P.session.tasks[i];
+  taskBannerHost = h("div", { style: "display:contents" });
+  refreshTaskBanner();
+  const v = taskView(P.test, i, { live: true, onDone: () => endTask("done"), onGiveUp: () => endTask("gaveup") });
+  const wrap = v.wrap; pillText = v.timer;
+  mount(taskBannerHost, v.node);
+  const bars = v.bars;
+  P.bars = bars;
+  await cropToPrototype(wrap);
+  if (!Rec.started) Rec.start(); else Rec.resume();
+  s.startT = Math.round(Rec.now()); P.taskStart = performance.now();
+  ev("task_start", { task: i });
+  clearInterval(P.timerId);
+  P.timerId = setInterval(() => {
+    if (pillText) pillText.textContent = "Recording · " + fmt(performance.now() - P.taskStart);
+    if (P.bars) { const lit = Math.min(P.bars.length, Math.round(Rec.level() * 70)); P.bars.forEach((b, j) => b.classList.toggle("on", j < lit)); }
+  }, 120);
+  window.onbeforeunload = () => "Your recording will be lost if you leave.";
+}
+function endTask(outcome) {
+  clearInterval(P.timerId);
+  const s = P.session.tasks[P.idx];
+  s.outcome = outcome; s.endT = Math.round(Rec.now()); s.durationMs = Math.round(performance.now() - P.taskStart);
+  ev("task_end", { task: P.idx, outcome });
+  Rec.pause();
+  if (s.answers.length) showQuestions(); else nextTask();
+}
+function nextTask() { if (P.idx < P.test.tasks.length - 1) startTask(P.idx + 1); else finish(); }
+
+function showQuestions() {
+  const s = P.session.tasks[P.idx], last = P.idx === P.test.tasks.length - 1;
+  ev("questions_start", { task: P.idx });
+  mount(participantBar(h("span", { class: "pill" }, h("span", { class: "dot" }), "Recording paused")), h("div", { class: "page" }, h("div", { class: "col narrow" },
+    h("h1", { class: "big" }, `Task ${P.idx + 1} done. A few quick questions`),
+    s.answers.map(a => h("div", { class: "card" }, h("h3", null, a.q),
+      h("textarea", { class: "inp", style: "min-height:90px", placeholder: "Type your answer", value: a.a, oninput: e => a.a = e.target.value }))),
+    h("div", null, h("button", { class: "btn primary", onclick: () => { ev("questions_end", { task: P.idx }); nextTask(); } }, last ? "Finish" : `Next: Task ${P.idx + 2}`)))));
+}
+
+async function finish() {
+  clearInterval(P.timerId);
+  mount(participantBar(), h("div", { class: "page" }, h("div", { class: "col narrow" }, h("h1", { class: "big" }, "Saving your session…"), h("p", { class: "sub" }, "This takes a few seconds."))));
+  const blobs = await Rec.stop();
+  const ses = P.session;
+  ses.finishedAt = new Date().toISOString();
+  ses.durationMs = Math.round(Rec.active);
+  ses.recordings = { screen: blobs.screen ? "screen.webm" : null, audio: blobs.audio ? "audio.webm" : null, camera: blobs.camera ? "camera.webm" : null };
+  const files = [{ name: "session.json", blob: new Blob([JSON.stringify(ses, null, 2)], { type: "application/json" }) }];
+  for (const [k, b] of Object.entries(blobs)) files.push({ name: k + ".webm", blob: b });
+  P.zip = await makeZip(files);
+  const who = slug(ses.participant.name || "participant");
+  P.fileName = `${slug(P.test.name)}_${who}_${ses.finishedAt.slice(0, 10)}.testkit`;
+  showHandover();
+}
+function showHandover() {
+  const mb = (P.zip.size / 1048576).toFixed(1);
+  const saveBtn = h("button", { class: "btn primary", onclick: () => { download(P.zip, P.fileName); P.saved = true; window.onbeforeunload = null; showHandover(); } }, P.saved ? "Save again" : "Save session file");
+  mount(participantBar(), h("div", { class: "page" }, h("div", { class: "col narrow" },
+    h("h1", { class: "big" }, "Thank you! One last step"),
+    h("p", { class: "sub" }, "Your recording is stored only on this computer until you send it."),
+    h("div", { class: "card" }, h("h3", null, "1  Save your session file"), h("span", { class: "msg mid" }, `${P.fileName} · ${mb} MB`),
+      h("div", { class: "row" }, saveBtn, P.saved ? h("span", { class: "msg ok" }, "✓ Saved to your Downloads folder") : null)),
+    h("div", { class: "card" }, h("h3", null, "2  Send it back"), h("div", { class: "pre" }, P.test.returnTo || "Send the file to the person who asked you to take this test.")),
+    P.saved
+      ? h("div", { class: "card tight", style: "background:var(--okbg);border:0;color:var(--ok);font-weight:600" }, "File saved. You can close this tab once you have sent it.")
+      : h("div", { class: "card tight", style: "background:var(--badbg);border:0;color:var(--bad);font-weight:600" }, "Don't close this tab until the file is saved."),
+    P.preview ? h("div", null, h("button", { class: "btn", onclick: exitPreview }, "Back to editor")) : null)));
+}
+
+/* ============================== Review ============================== */
+async function addSessionFiles(files) {
+  const errs = [];
+  for (const f of files) {
+    try {
+      const entries = await readZip(f);
+      if (!entries["session.json"]) throw new Error("No session data inside.");
+      const session = JSON.parse(await entries["session.json"].text());
+      if (session.kind !== "testkit-session") throw new Error("Not a TestKit session.");
+      R.sessions.push({ id: uid(), fileName: f.name, session, blobs: entries });
+    } catch (e) { errs.push(`${f.name}: ${e.message}`); }
+  }
+  return errs;
+}
+function renderReview(errs) {
+  const drop = h("div", { class: "drop" }, "Drop session files (.testkit) here, or",
+    h("button", { class: "btn", onclick: async () => { const fs = await pickFile(".testkit,.zip", true); if (fs.length) renderReview(await addSessionFiles(fs)); } }, "Choose files"));
+  drop.addEventListener("dragover", e => { e.preventDefault(); drop.classList.add("over"); });
+  drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+  drop.addEventListener("drop", async e => { e.preventDefault(); drop.classList.remove("over"); renderReview(await addSessionFiles([...e.dataTransfer.files])); });
+
+  const rows = R.sessions.map(r => {
+    const s = r.session;
+    return h("tr", null,
+      h("td", null, h("b", null, s.participant.name || "Anonymous"), s.preview ? h("div", { class: "msg mid" }, "Preview run") : null),
+      h("td", null, s.test.name),
+      h("td", null, s.finishedAt ? new Date(s.finishedAt).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : ""),
+      h("td", null, s.tasks.map(t => h("span", { class: "chip " + (t.outcome || "none"), title: t.title }, `${t.index + 1} · ${t.outcome === "done" ? "Done" : t.outcome === "gaveup" ? "Gave up" : "Not reached"}${t.durationMs != null ? " · " + fmt(t.durationMs) : ""}`))),
+      h("td", null, s.transcript ? "Ready" : r.transcribing ? "Transcribing…" : "Not yet"),
+      h("td", { style: "text-align:right;white-space:nowrap" },
+        h("button", { class: "btn small", onclick: () => { R.current = r; renderDetail(r); } }, "Open"), " ",
+        h("button", { class: "btn small link", onclick: () => { R.sessions = R.sessions.filter(x => x !== r); renderReview(); } }, "Remove")));
+  });
+  mount(researcherBar(), h("div", { class: "page" }, h("div", { class: "col", style: "max-width:1200px" },
+    h("div", { class: "row between" }, h("h2", null, "Review sessions"),
+      h("button", { class: "btn small", disabled: !R.sessions.length, onclick: exportCsv }, "Export answers (CSV)")),
+    h("p", { class: "sub" }, "Session files are opened in this browser only. Nothing is uploaded. Files are not kept when you close this page."),
+    drop,
+    errs && errs.length ? h("div", { class: "msg err" }, errs.map(e => h("div", null, e))) : null,
+    R.sessions.length
+      ? h("div", { class: "tbl" }, h("table", null, h("thead", null, h("tr", null, ["Participant", "Test", "Date", "Tasks", "Transcript", ""].map(x => h("th", null, x)))), h("tbody", null, rows)))
+      : h("div", { class: "empty" }, h("b", null, "No sessions loaded yet"), h("div", null, "Ask participants to send their .testkit file, then drop the files above.")))));
+}
+function exportCsv() {
+  const q = v => `"${String(v ?? "").replace(/"/g, '""')}"`;
+  const lines = [["participant", "test", "finished_at", "task", "outcome", "time_seconds", "question", "answer"].join(",")];
+  for (const r of R.sessions) {
+    const s = r.session;
+    for (const t of s.tasks) {
+      const base = [s.participant.name || "Anonymous", s.test.name, s.finishedAt, `${t.index + 1}. ${t.title}`, t.outcome || "not reached", t.durationMs != null ? (t.durationMs / 1000).toFixed(1) : ""];
+      if (!t.answers.length) lines.push(base.concat(["", ""]).map(q).join(","));
+      for (const a of t.answers) lines.push(base.concat([a.q, a.a]).map(q).join(","));
+    }
+  }
+  download(new Blob(["\ufeff" + lines.join("\n")], { type: "text/csv" }), "testkit-answers.csv");
+}
+
+function renderDetail(r) {
+  const s = r.session, b = r.blobs;
+  const dur = Math.max(1, s.durationMs || 1);
+  const urls = {};
+  for (const k of ["screen.webm", "audio.webm", "camera.webm"]) if (b[k]) urls[k] = URL.createObjectURL(b[k]);
+  let main;
+  if (urls["screen.webm"]) main = h("video", { class: "main", src: urls["screen.webm"], controls: true, preload: "auto" });
+  else if (urls["audio.webm"]) main = h("audio", { src: urls["audio.webm"], controls: true, preload: "auto" });
+  const cam = urls["camera.webm"] ? h("video", { class: "cam", src: urls["camera.webm"], muted: true, preload: "auto", playsinline: true }) : null;
+  if (cam && !main) { cam.className = "main"; cam.controls = true; main = cam; }
+  const fixDuration = m => { m.addEventListener("loadedmetadata", () => { if (m.duration === Infinity) { m.currentTime = 1e101; m.addEventListener("timeupdate", function once() { m.removeEventListener("timeupdate", once); m.currentTime = 0; }); } }); };
+  if (main) fixDuration(main);
+  if (cam && cam !== main) {
+    fixDuration(cam);
+    main.addEventListener("play", () => cam.play().catch(() => {}));
+    main.addEventListener("pause", () => cam.pause());
+    main.addEventListener("ratechange", () => cam.playbackRate = main.playbackRate);
+    const sync = () => { if (Math.abs(cam.currentTime - main.currentTime) > 0.3) cam.currentTime = main.currentTime; };
+    main.addEventListener("seeked", sync); main.addEventListener("timeupdate", sync);
+  }
+  const seek = ms => { if (!main) return; main.currentTime = ms / 1000; if (main.paused) main.play().catch(() => {}); };
+
+  // Timeline
+  const tl = h("div", { class: "tl", title: "Click to jump" });
+  for (const t of s.tasks) {
+    if (t.startT == null) continue;
+    const end = t.endT ?? dur, left = t.startT / dur * 100, w = Math.max(0.5, (end - t.startT) / dur * 100);
+    tl.append(h("div", { class: "seg " + (t.outcome || "open"), style: `left:${left}%;width:${w}%`, title: `${t.title} · ${t.outcome === "done" ? "Done" : t.outcome === "gaveup" ? "Gave up" : ""}` }, `Task ${t.index + 1}`));
+    if (t.answers.length && t.endT != null) tl.append(h("div", { class: "qmark", style: `left:${t.endT / dur * 100}%`, title: "Questions (recording paused)" }, h("b", null, "Q")));
+  }
+  const ph = h("div", { class: "head-play", style: "left:0" });
+  tl.append(ph);
+  tl.addEventListener("click", e => { const rc = tl.getBoundingClientRect(); seek((e.clientX - rc.left) / rc.width * dur); });
+  if (main) main.addEventListener("timeupdate", () => { ph.style.left = Math.min(100, main.currentTime * 1000 / dur * 100) + "%"; highlightLine(main.currentTime); });
+
+  const cards = h("div", { class: "tcards" }, s.tasks.map(t => h("button", { class: "tcard", onclick: () => t.startT != null && seek(t.startT) },
+    h("b", null, `Task ${t.index + 1} · ${t.title}`),
+    h("span", { class: "chip " + (t.outcome || "none") }, t.outcome === "done" ? "Done" : t.outcome === "gaveup" ? "Gave up" : "Not reached"),
+    t.durationMs != null ? h("span", { class: "msg mid" }, " " + fmt(t.durationMs)) : null)));
+
+  // Right panel
+  let rtab = r.rtab || (s.transcript ? "transcript" : "answers");
+  const body = h("div", { class: "rbody" });
+  const tabBtn = (id, label) => h("button", { class: "tab" + (rtab === id ? " on" : ""), onclick: () => { r.rtab = id; renderDetail(r); } }, label);
+  let lines = [];
+  function highlightLine(sec) {
+    let cur = null;
+    for (const l of lines) { if (sec >= l.start) cur = l; }
+    lines.forEach(l => l.el.classList.toggle("cur", l === cur));
+  }
+  if (rtab === "answers") {
+    for (const t of s.tasks) {
+      body.append(h("h3", { style: "font-size:15px;margin-top:4px" }, `Task ${t.index + 1} · ${t.title}`));
+      if (!t.answers.length) body.append(h("div", { class: "msg mid" }, "No questions for this task."));
+      for (const a of t.answers) body.append(h("div", { class: "qa card tight" }, h("b", null, a.q), h("div", null, a.a.trim() || h("span", { class: "msg mid" }, "No answer"))));
+    }
+  } else {
+    body.append(transcriptPanel(r, seek, ls => { lines = ls; }));
+  }
+
+  mount(Bar(h("span", { class: "crumb" }, "Review  ›  " + (s.participant.name || "Anonymous") + "  ·  " + s.test.name),
+      h("button", { class: "btn small", onclick: () => { Object.values(urls).forEach(URL.revokeObjectURL); R.current = null; renderReview(); } }, "Back to sessions")),
+    h("div", { class: "detail" },
+      h("div", { class: "left" },
+        h("div", { class: "player" }, main || h("div", { class: "empty", style: "color:#bbb" }, "This session has no recordings."), cam && cam !== main ? cam : null),
+        tl,
+        h("div", { class: "msg mid" }, "Bars are tasks. Q marks where questions were answered (recording paused). Click the bar to jump."),
+        cards),
+      h("div", { class: "right" }, h("div", { class: "rtabs" }, tabBtn("transcript", "Transcript"), tabBtn("answers", "Answers")), body)));
+}
+
+/* ============================== Transcription ============================== */
+const WORKER_SRC = `
+let asr = null, loadedKey = null;
+self.onmessage = async (e) => {
+  const { audio, model, language, url } = e.data;
+  try {
+    const T = await import(url);
+    T.env.allowLocalModels = false;
+    try { await caches.open("testkit-probe"); } catch { T.env.useBrowserCache = false; }
+    if (!asr || loadedKey !== model) {
+      const progress_callback = (p) => self.postMessage({ type: "progress", p: { status: p.status, file: p.file, progress: p.progress, loaded: p.loaded, total: p.total } });
+      const tryLoad = (device) => T.pipeline("automatic-speech-recognition", model, {
+        device, dtype: device === "webgpu" ? { encoder_model: "fp32", decoder_model_merged: "q4" } : "q8", progress_callback });
+      let device = ("gpu" in navigator) ? "webgpu" : "wasm";
+      try { asr = await tryLoad(device); }
+      catch (err) { if (device !== "webgpu") throw err; device = "wasm"; asr = await tryLoad("wasm"); }
+      loadedKey = model;
+      self.postMessage({ type: "device", device });
+    }
+    self.postMessage({ type: "status", text: "Transcribing" });
+    const opts = { chunk_length_s: 30, stride_length_s: 5, return_timestamps: true, task: "transcribe" };
+    if (language) opts.language = language;
+    const out = await asr(audio, opts);
+    self.postMessage({ type: "done", chunks: out.chunks || [], text: out.text || "" });
+  } catch (err) {
+    self.postMessage({ type: "error", message: String((err && err.message) || err) });
+  }
+};`;
+let worker = null;
+function getWorker() { if (!worker) worker = new Worker(URL.createObjectURL(new Blob([WORKER_SRC], { type: "text/javascript" }))); return worker; }
+
+async function decodeTo16k(blob) {
+  const buf = await blob.arrayBuffer();
+  const ac = new AudioContext({ sampleRate: 16000 });
+  try {
+    const ab = await ac.decodeAudioData(buf);
+    if (ab.numberOfChannels === 1) return ab.getChannelData(0).slice();
+    const out = new Float32Array(ab.length);
+    for (let c = 0; c < ab.numberOfChannels; c++) { const d = ab.getChannelData(c); for (let i = 0; i < d.length; i++) out[i] += d[i] / ab.numberOfChannels; }
+    return out;
+  } finally { ac.close(); }
+}
+
+function transcriptPanel(r, seek, setLines) {
+  const s = r.session, wrap = h("div", { class: "stack", style: "gap:12px" });
+  const src = r.blobs["audio.webm"] || r.blobs["screen.webm"];
+  if (!src) { wrap.append(h("div", { class: "msg mid" }, "No voice was recorded in this session.")); return wrap; }
+
+  if (s.transcript && !r.retranscribe) {
+    const search = h("input", { type: "text", class: "inp", placeholder: "Search transcript…" });
+    const list = h("div", { class: "stack", style: "gap:2px" });
+    const lines = s.transcript.chunks.map(c => {
+      const txt = h("span");
+      const el = h("div", { class: "line", onclick: () => seek(c.start * 1000) }, h("span", { class: "t" }, fmt(c.start * 1000)), txt);
+      return { start: c.start, text: c.text, el, txt };
+    });
+    const paint = () => {
+      const qv = search.value.trim().toLowerCase();
+      for (const l of lines) {
+        const hit = !qv || l.text.toLowerCase().includes(qv);
+        l.el.hidden = !hit;
+        l.txt.innerHTML = qv && hit ? esc(l.text).replace(new RegExp(qv.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/[&<>"]/g, c => esc(c)), "gi"), m => `<mark>${m}</mark>`) : esc(l.text);
+      }
+    };
+    search.addEventListener("input", paint);
+    lines.forEach(l => list.append(l.el)); paint(); setLines(lines);
+    wrap.append(search, list,
+      h("div", { class: "msg mid" }, `${s.transcript.model.split("/").pop()} · ${s.transcript.language || "auto-detected language"} · machine transcript, check quotes against the recording`),
+      h("div", { class: "row" },
+        r.dirty ? h("button", { class: "btn small primary", onclick: () => saveSessionWithTranscript(r) }, "Save session file with transcript") : h("span", { class: "msg ok" }, "✓ Transcript saved in the session file"),
+        h("button", { class: "btn small link", onclick: () => { r.retranscribe = true; renderDetail(r); } }, "Transcribe again")));
+    return wrap;
+  }
+
+  const model = h("select", { class: "inp" },
+    h("option", { value: "onnx-community/whisper-base" }, "Fast (Whisper base, about 80 MB download)"),
+    h("option", { value: "onnx-community/whisper-small" }, "More accurate (Whisper small, about 250 MB download)"));
+  const lang = h("select", { class: "inp" }, h("option", { value: "" }, "Detect automatically"), h("option", { value: "english" }, "English"), h("option", { value: "swedish" }, "Swedish"));
+  const status = h("div", { class: "msg mid" });
+  const bar = h("div", { class: "progress", hidden: true }, h("i"));
+  const go = h("button", { class: "btn primary" }, "Transcribe");
+  go.addEventListener("click", async () => {
+    go.disabled = true; model.disabled = true; lang.disabled = true; bar.hidden = false; r.transcribing = true;
+    const t0 = performance.now(); let phase = "Preparing audio";
+    const tick = setInterval(() => { status.textContent = `${phase}… ${fmt(performance.now() - t0)}`; }, 500);
+    try {
+      const audio = await decodeTo16k(src);
+      phase = "Loading the speech model (first time can take a few minutes)";
+      const w = getWorker();
+      const result = await new Promise((res, rej) => {
+        const files = {};
+        w.onmessage = e => {
+          const m = e.data;
+          if (m.type === "progress" && m.p.status === "progress" && m.p.file) {
+            files[m.p.file] = m.p;
+            const tot = Object.values(files).reduce((a, f) => a + (f.total || 0), 0), got = Object.values(files).reduce((a, f) => a + (f.loaded || 0), 0);
+            if (tot) bar.firstChild.style.width = (got / tot * 100).toFixed(0) + "%";
+          } else if (m.type === "device") { phase = "Loading the speech model"; }
+          else if (m.type === "status") { phase = `Transcribing ${fmt(audio.length / 16)} of audio (usually takes about as long as the recording)`; bar.firstChild.style.width = "100%"; }
+          else if (m.type === "done") res(m);
+          else if (m.type === "error") rej(new Error(m.message));
+        };
+        w.onerror = e => rej(new Error(e.message || "The transcription worker failed to start."));
+        w.postMessage({ audio, model: model.value, language: lang.value || null, url: TRANSFORMERS_URL }, [audio.buffer]);
+      });
+      s.transcript = { model: model.value, language: lang.value || null, createdAt: new Date().toISOString(),
+        chunks: result.chunks.map(c => ({ start: c.timestamp[0] ?? 0, end: c.timestamp[1] ?? (c.timestamp[0] ?? 0) + 5, text: (c.text || "").trim() })).filter(c => c.text) };
+      r.dirty = true; r.retranscribe = false;
+      clearInterval(tick); r.transcribing = false; renderDetail(r);
+    } catch (e) {
+      clearInterval(tick); r.transcribing = false;
+      go.disabled = false; model.disabled = false; lang.disabled = false; bar.hidden = true;
+      status.className = "msg err";
+      const msg = String(e.message || e);
+      status.textContent = /fetch|network|Failed to load|import/i.test(msg)
+        ? "Couldn't download the speech model. Check your internet connection. Your network may block cdn.jsdelivr.net or huggingface.co. (" + msg + ")"
+        : "Transcription failed: " + msg;
+    }
+  });
+  wrap.append(
+    h("p", { class: "sub" }, "Transcription runs on this computer. The audio is not uploaded. The speech model is downloaded the first time."),
+    h("div", { class: "field" }, h("label", null, "Model"), model),
+    h("div", { class: "field" }, h("label", null, "Language"), lang),
+    h("div", null, go), bar, status);
+  return wrap;
+}
+async function saveSessionWithTranscript(r) {
+  const files = [{ name: "session.json", blob: new Blob([JSON.stringify(r.session, null, 2)], { type: "application/json" }) }];
+  for (const [k, b] of Object.entries(r.blobs)) if (k !== "session.json") files.push({ name: k, blob: b });
+  download(await makeZip(files), r.fileName.endsWith(".testkit") ? r.fileName : r.fileName + ".testkit");
+  r.dirty = false; renderDetail(r);
+}
+
+/* ============================== Boot ============================== */
+app.addEventListener("input", () => { const m = document.getElementById("fixmsg"); if (m) m.remove(); });
+if (!window.MediaRecorder || !navigator.mediaDevices) {
+  mount(Bar(null, null), h("div", { class: "empty" }, h("b", null, "This browser can't record."), h("div", null, "Open this file in Chrome or Edge on a laptop or desktop.")));
+} else if (EMBEDDED) {
+  startParticipant(normaliseTest(EMBEDDED));
+} else if (location.hash.startsWith("#t=")) {
+  decodeTest(location.hash.slice(3)).then(t => startParticipant(normaliseTest(t))).catch(() => {
+    mount(Bar(null, null), h("div", { class: "empty" }, h("b", null, "This test link is broken or incomplete."), h("div", null, "Ask the person who sent it for a new link. Copy the whole link, including everything after the # sign.")));
+  });
+} else {
+  R.test = loadDraft();
+  renderResearcher();
+}
+})();
 </script>
 </body>
 </html>
